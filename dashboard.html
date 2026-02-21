@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700&family=Share+Tech+Mono&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#060810;--bg2:#0c1020;--bg3:#121828;--neon:#00f5c4;--yellow:#f5c400;--pink:#f500c4;--blue:#0084ff;--red:#ff3c5a;--orange:#ff8c42;--purple:#9b59ff;--text:#c8d4e8;--muted:#4a566e;--border:rgba(0,245,196,0.1);--sidebar:220px;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;font-weight:300;min-height:100vh;display:flex;}
+  .grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(0,245,196,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,196,0.015) 1px,transparent 1px);background-size:50px 50px;}
+
+  /* SIDEBAR */
+  .sidebar{width:var(--sidebar);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;padding:0;}
+  .sb-logo{padding:24px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+  .sb-logo-text{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:4px;color:#fff;}
+  .sb-logo-text span{color:var(--neon);}
+  .sb-logo-hex{width:28px;height:28px;background:var(--neon);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);}
+
+  .sb-nav{flex:1;padding:16px 0;overflow-y:auto;}
+  .sb-section{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);padding:16px 20px 6px;text-transform:uppercase;}
+  .sb-item{display:flex;align-items:center;gap:12px;padding:10px 20px;cursor:pointer;transition:all 0.2s;position:relative;}
+  .sb-item:hover{background:rgba(255,255,255,0.03);}
+  .sb-item.active{background:rgba(0,245,196,0.06);}
+  .sb-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--neon);}
+  .sb-icon{font-size:16px;width:20px;text-align:center;}
+  .sb-label{font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;color:var(--muted);}
+  .sb-item.active .sb-label{color:var(--neon);}
+  .sb-item:hover .sb-label{color:var(--text);}
+  .sb-badge{font-family:'Share Tech Mono',monospace;font-size:10px;padding:2px 6px;background:var(--red);color:#fff;border-radius:1px;margin-left:auto;}
+
+  .sb-user{padding:16px 20px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+  .sb-avatar{width:36px;height:36px;background:linear-gradient(135deg,var(--neon),var(--blue));display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--bg);flex-shrink:0;}
+  .sb-uname{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;color:#fff;}
+  .sb-urole{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--neon);letter-spacing:2px;}
+  .sb-settings{margin-left:auto;font-size:16px;cursor:pointer;color:var(--muted);}
+
+  /* MAIN */
+  .main{margin-left:var(--sidebar);flex:1;padding:0;min-height:100vh;position:relative;z-index:1;}
+
+  /* TOPBAR */
+  .topbar{height:64px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 32px;gap:16px;background:rgba(6,8,16,0.8);backdrop-filter:blur(20px);position:sticky;top:0;z-index:40;}
+  .tb-title{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:3px;}
+  .tb-sub{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;}
+  .tb-right{margin-left:auto;display:flex;align-items:center;gap:16px;}
+  .notif-btn{position:relative;cursor:pointer;padding:8px;color:var(--muted);transition:color 0.2s;font-size:18px;}
+  .notif-btn:hover{color:var(--neon);}
+  .notif-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;background:var(--red);border-radius:50%;box-shadow:0 0 6px var(--red);}
+  .tb-game-select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 12px;font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:1px;cursor:pointer;outline:none;}
+  .tb-game-select option{background:var(--bg3);}
+  .pulse-dot{width:7px;height:7px;background:var(--neon);border-radius:50%;box-shadow:0 0 8px var(--neon);animation:pulse 2s ease infinite;}
+  @keyframes pulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.4);opacity:0.7;}}
+
+  /* CONTENT */
+  .content{padding:28px 32px;}
+
+  /* WELCOME BANNER */
+  .welcome-banner{background:linear-gradient(135deg,rgba(0,245,196,0.06),rgba(0,132,255,0.04));border:1px solid var(--border);padding:24px 28px;margin-bottom:24px;display:flex;align-items:center;gap:24px;position:relative;overflow:hidden;}
+  .welcome-banner::before{content:'';position:absolute;right:-40px;top:-40px;width:180px;height:180px;background:radial-gradient(ellipse,rgba(0,245,196,0.08),transparent 70%);}
+  .wb-avatar{width:64px;height:64px;background:linear-gradient(135deg,var(--neon),var(--blue));display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--bg);flex-shrink:0;}
+  .wb-info{}
+  .wb-greeting{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:3px;margin-bottom:4px;}
+  .wb-name{font-family:'Bebas Neue',sans-serif;font-size:32px;color:#fff;letter-spacing:3px;}
+  .wb-name span{color:var(--neon);}
+  .wb-stats{display:flex;gap:28px;margin-left:auto;}
+  .wb-stat{text-align:center;}
+  .wb-stat-num{font-family:'Bebas Neue',sans-serif;font-size:32px;color:#fff;line-height:1;}
+  .wb-stat-num span{color:var(--neon);}
+  .wb-stat-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+
+  /* STAT CARDS ROW */
+  .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin-bottom:24px;}
+  .stat-card{background:var(--bg2);border:1px solid var(--border);padding:20px;position:relative;overflow:hidden;}
+  .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--sc-color,var(--neon));}
+  .sc-label{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:10px;}
+  .sc-num{font-family:'Bebas Neue',sans-serif;font-size:42px;color:#fff;line-height:1;}
+  .sc-sub{font-size:12px;color:var(--muted);margin-top:4px;}
+  .sc-change{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;position:absolute;top:20px;right:16px;}
+  .sc-change.up{color:var(--neon);}
+  .sc-change.down{color:var(--red);}
+
+  /* TWO COL LAYOUT */
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;}
+
+  /* SECTION CARD */
+  .section-card{background:var(--bg2);border:1px solid var(--border);}
+  .sc-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+  .sc-header-icon{font-size:16px;}
+  .sc-header-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#fff;}
+  .sc-header-action{margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--neon);letter-spacing:2px;cursor:pointer;}
+
+  /* RATING SCOPES */
+  .rating-scopes{padding:4px 0;}
+  .scope-row{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.03);}
+  .scope-row:last-child{border-bottom:none;}
+  .scope-icon{font-size:14px;width:20px;text-align:center;}
+  .scope-name{font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:1px;color:var(--text);flex:1;}
+  .scope-elo{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;line-height:1;}
+  .scope-rank{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);text-align:right;}
+  .scope-bar{width:80px;height:3px;background:rgba(255,255,255,0.06);position:relative;}
+  .scope-fill{height:100%;background:var(--neon);}
+
+  /* ACTIVE TOURNAMENTS */
+  .tournament-list{padding:4px 0;}
+  .t-item{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.03);cursor:pointer;transition:background 0.2s;}
+  .t-item:hover{background:rgba(255,255,255,0.02);}
+  .t-item:last-child{border-bottom:none;}
+  .t-item-top{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+  .t-item-name{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:600;letter-spacing:1px;color:#fff;flex:1;}
+  .t-badge{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;padding:2px 8px;border:1px solid;}
+  .t-badge.public{color:var(--neon);border-color:rgba(0,245,196,0.3);}
+  .t-badge.private{color:var(--yellow);border-color:rgba(245,196,0,0.3);}
+  .t-badge.club{color:var(--pink);border-color:rgba(245,0,196,0.3);}
+  .t-badge.live{color:var(--red);border-color:rgba(255,60,90,0.3);animation:blink-border 1.5s ease infinite;}
+  @keyframes blink-border{0%,100%{opacity:1;}50%{opacity:0.5;}}
+  .t-item-meta{display:flex;align-items:center;gap:12px;}
+  .t-meta-item{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);}
+  .t-progress{margin-top:8px;}
+  .t-prog-track{height:2px;background:rgba(255,255,255,0.06);}
+  .t-prog-fill{height:100%;background:var(--neon);}
+
+  /* MATCH HISTORY */
+  .match-list{padding:4px 0;}
+  .match-item{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.03);}
+  .match-item:last-child{border-bottom:none;}
+  .match-result{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;flex-shrink:0;}
+  .match-result.win{background:rgba(0,245,196,0.12);color:var(--neon);}
+  .match-result.loss{background:rgba(255,60,90,0.12);color:var(--red);}
+  .match-opp{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;letter-spacing:1px;color:#fff;flex:1;}
+  .match-game{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);}
+  .match-elo{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;}
+  .match-elo.gain{color:var(--neon);}
+  .match-elo.lose{color:var(--red);}
+  .match-time{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);text-align:right;}
+
+  /* ACHIEVEMENTS */
+  .ach-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:16px;}
+  .ach-item{padding:14px;background:var(--bg3);display:flex;flex-direction:column;align-items:center;gap:6px;border:1px solid rgba(255,255,255,0.04);transition:all 0.2s;cursor:default;}
+  .ach-item:hover{border-color:var(--border);}
+  .ach-item.locked{opacity:0.3;}
+  .ach-icon{font-size:24px;}
+  .ach-name{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--text);text-align:center;}
+
+  /* NOTIFICATIONS PANEL */
+  .notif-list{padding:4px 0;}
+  .notif-item{display:flex;gap:12px;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.03);cursor:pointer;transition:background 0.2s;}
+  .notif-item:hover{background:rgba(255,255,255,0.02);}
+  .notif-item.unread{background:rgba(0,245,196,0.03);}
+  .notif-item:last-child{border-bottom:none;}
+  .notif-dot2{width:6px;height:6px;background:var(--neon);border-radius:50%;margin-top:5px;flex-shrink:0;box-shadow:0 0 6px var(--neon);}
+  .notif-dot2.read{background:transparent;box-shadow:none;}
+  .notif-body{flex:1;}
+  .notif-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;color:#fff;margin-bottom:2px;}
+  .notif-msg{font-size:12px;color:var(--muted);line-height:1.5;}
+  .notif-time{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);flex-shrink:0;}
+
+  /* UPCOMING MATCH */
+  .upcoming-card{background:linear-gradient(135deg,rgba(245,196,0,0.06),rgba(245,0,196,0.04));border:1px solid rgba(245,196,0,0.2);padding:20px;margin-bottom:24px;}
+  .uc-label{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--yellow);letter-spacing:3px;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .uc-label::before{content:'';width:6px;height:6px;background:var(--yellow);border-radius:50%;box-shadow:0 0 8px var(--yellow);animation:pulse 2s ease infinite;}
+  .uc-match{display:flex;align-items:center;gap:16px;}
+  .uc-player{flex:1;text-align:center;}
+  .uc-pname{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;}
+  .uc-prating{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);}
+  .uc-vs{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--muted);}
+  .uc-meta{margin-top:14px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
+  .uc-meta-item{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px;}
+  .uc-actions{margin-top:14px;display:flex;gap:8px;}
+  .uc-btn{flex:1;padding:10px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;border:none;cursor:pointer;transition:all 0.3s;}
+  .uc-btn-primary{background:var(--yellow);color:var(--bg);}
+  .uc-btn-primary:hover{box-shadow:0 0 20px rgba(245,196,0,0.3);}
+  .uc-btn-secondary{background:transparent;border:1px solid var(--border);color:var(--muted);}
+  .uc-btn-secondary:hover{color:var(--text);border-color:rgba(255,255,255,0.2);}
+
+  /* MINI CHART */
+  .mini-chart{padding:16px 20px 8px;}
+  canvas{width:100%;height:80px;}
+
+  @media(max-width:1100px){
+    .stat-row{grid-template-columns:repeat(2,1fr);}
+    .two-col{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-hex"></div>
+    <div class="sb-logo-text">NEX<span>US</span></div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-section">Main</div>
+    <div class="sb-item active" onclick="window.location.href='/dashboard'" style="cursor:pointer"><span class="sb-icon">📊</span><span class="sb-label">Dashboard</span></div>
+    <div class="sb-item"><span class="sb-icon">👤</span><span class="sb-label">My Profile</span></div>
+    <div class="sb-item" onclick="window.location.href='/bracket'" style="cursor:pointer"><span class="sb-icon">🏆</span><span class="sb-label">Tournaments</span></div>
+    <div class="sb-item"><span class="sb-icon">⚔️</span><span class="sb-label">My Matches</span></div>
+    <div class="sb-section">Community</div>
+    <div class="sb-item"><span class="sb-icon">🏢</span><span class="sb-label">Clubs</span></div>
+    <div class="sb-item" onclick="window.location.href='/leaderboard'" style="cursor:pointer"><span class="sb-icon">🌍</span><span class="sb-label">Leaderboard</span></div>
+    <div class="sb-item"><span class="sb-icon">🎮</span><span class="sb-label">Games</span></div>
+    <div class="sb-section">Account</div>
+    <div class="sb-item"><span class="sb-icon">🔔</span><span class="sb-label">Notifications</span><span class="sb-badge">3</span></div>
+    <div class="sb-item" onclick="window.location.href='/login'" style="cursor:pointer"><span class="sb-icon">🚪</span><span class="sb-label">Logout</span></div>
+  </div>
+  <div class="sb-user">
+    <div class="sb-avatar">AP</div>
+    <div>
+      <div class="sb-uname">Apex#7731</div>
+      <div class="sb-urole">PLAYER · VALORANT</div>
+    </div>
+    <div class="sb-settings">⋮</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div class="tb-title">Dashboard</div>
+      <div class="tb-sub">Thursday, February 19 · 2026</div>
+    </div>
+    <div class="tb-right">
+      <div class="pulse-dot"></div>
+      <select class="tb-game-select">
+        <option>Valorant</option>
+        <option>CS2</option>
+        <option>League of Legends</option>
+        <option>Rocket League</option>
+      </select>
+      <div class="notif-btn">🔔<div class="notif-dot"></div></div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- WELCOME -->
+    <div class="welcome-banner">
+      <div class="wb-avatar">AP</div>
+      <div class="wb-info">
+        <div class="wb-greeting">⚡ WELCOME BACK</div>
+        <div class="wb-name">APEX<span>#7731</span></div>
+      </div>
+      <div class="wb-stats">
+        <div class="wb-stat"><div class="wb-stat-num"><span>1</span>st</div><div class="wb-stat-label">City Rank</div></div>
+        <div class="wb-stat"><div class="wb-stat-num">1<span>466</span></div><div class="wb-stat-label">Global ELO</div></div>
+        <div class="wb-stat"><div class="wb-stat-num"><span>7</span></div><div class="wb-stat-label">Win Streak</div></div>
+      </div>
+    </div>
+
+    <!-- UPCOMING MATCH -->
+    <div class="upcoming-card">
+      <div class="uc-label">NEXT MATCH · IN 47 MINUTES</div>
+      <div class="uc-match">
+        <div class="uc-player">
+          <div class="uc-pname">APEX</div>
+          <div class="uc-prating">ELO: 1466 · Rank #2 India</div>
+        </div>
+        <div class="uc-vs">VS</div>
+        <div class="uc-player">
+          <div class="uc-pname">KIRA</div>
+          <div class="uc-prating">ELO: 1600 · Rank #1 India</div>
+        </div>
+      </div>
+      <div class="uc-meta">
+        <div class="uc-meta-item">🏆 NEXUS Open Season 3</div>
+        <div class="uc-meta-item">🎮 Valorant</div>
+        <div class="uc-meta-item">🔹 Quarter Final</div>
+        <div class="uc-meta-item">⚖️ Weight: 1.5×</div>
+      </div>
+      <div class="uc-actions">
+        <button class="uc-btn uc-btn-primary">Ready Up</button>
+        <button class="uc-btn uc-btn-secondary" onclick="window.location.href='/bracket'">View Bracket</button>
+      </div>
+    </div>
+
+    <!-- STATS ROW -->
+    <div class="stat-row">
+      <div class="stat-card" style="--sc-color:var(--neon)">
+        <div class="sc-label">GLOBAL ELO</div>
+        <div class="sc-num">1466</div>
+        <div class="sc-sub">Valorant · All Scopes</div>
+        <div class="sc-change up">▲ +16</div>
+      </div>
+      <div class="stat-card" style="--sc-color:var(--yellow)">
+        <div class="sc-label">WIN RATE</div>
+        <div class="sc-num">68<span style="font-size:22px;color:var(--muted)">%</span></div>
+        <div class="sc-sub">Last 30 matches</div>
+        <div class="sc-change up">▲ +4%</div>
+      </div>
+      <div class="stat-card" style="--sc-color:var(--blue)">
+        <div class="sc-label">TOURNAMENTS</div>
+        <div class="sc-num">12</div>
+        <div class="sc-sub">3 in progress</div>
+        <div class="sc-change up">+1 this week</div>
+      </div>
+      <div class="stat-card" style="--sc-color:var(--pink)">
+        <div class="sc-label">WIN STREAK</div>
+        <div class="sc-num">7</div>
+        <div class="sc-sub">Best: 12 wins</div>
+        <div class="sc-change up">🔥 Hot</div>
+      </div>
+    </div>
+
+    <!-- TWO COL -->
+    <div class="two-col">
+
+      <!-- RATING SCOPES -->
+      <div class="section-card">
+        <div class="sc-header">
+          <span class="sc-header-icon">🌍</span>
+          <span class="sc-header-title">Rating Scopes</span>
+          <span class="sc-header-action">VALORANT ▾</span>
+        </div>
+        <div class="rating-scopes">
+          <div class="scope-row">
+            <span class="scope-icon">🌐</span>
+            <span class="scope-name">Global</span>
+            <div class="scope-bar"><div class="scope-fill" style="width:55%"></div></div>
+            <div><div class="scope-elo" style="color:var(--neon)">1466</div><div class="scope-rank">#4,821 of 89,000</div></div>
+          </div>
+          <div class="scope-row">
+            <span class="scope-icon">🌏</span>
+            <span class="scope-name">Continent (Asia)</span>
+            <div class="scope-bar"><div class="scope-fill" style="width:65%;background:var(--blue)"></div></div>
+            <div><div class="scope-elo" style="color:var(--blue)">1478</div><div class="scope-rank">#1,204 of 31,000</div></div>
+          </div>
+          <div class="scope-row">
+            <span class="scope-icon">🇮🇳</span>
+            <span class="scope-name">Country (India)</span>
+            <div class="scope-bar"><div class="scope-fill" style="width:78%;background:var(--yellow)"></div></div>
+            <div><div class="scope-elo" style="color:var(--yellow)">1490</div><div class="scope-rank">#2 of 8,400</div></div>
+          </div>
+          <div class="scope-row">
+            <span class="scope-icon">📍</span>
+            <span class="scope-name">State (Maharashtra)</span>
+            <div class="scope-bar"><div class="scope-fill" style="width:88%;background:var(--pink)"></div></div>
+            <div><div class="scope-elo" style="color:var(--pink)">1502</div><div class="scope-rank">#1 of 2,100</div></div>
+          </div>
+          <div class="scope-row">
+            <span class="scope-icon">🏙️</span>
+            <span class="scope-name">City (Mumbai)</span>
+            <div class="scope-bar"><div class="scope-fill" style="width:95%;background:var(--neon)"></div></div>
+            <div><div class="scope-elo" style="color:var(--neon)">1510</div><div class="scope-rank">#1 of 640</div></div>
+          </div>
+          <div class="scope-row">
+            <span class="scope-icon">🏢</span>
+            <span class="scope-name">Club (NXS Warriors)</span>
+            <div class="scope-bar"><div class="scope-fill" style="width:82%;background:var(--orange)"></div></div>
+            <div><div class="scope-elo" style="color:var(--orange)">1495</div><div class="scope-rank">#2 of 24</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIVE TOURNAMENTS -->
+      <div class="section-card">
+        <div class="sc-header">
+          <span class="sc-header-icon">🏆</span>
+          <span class="sc-header-title">Active Tournaments</span>
+          <span class="sc-header-action">VIEW ALL</span>
+        </div>
+        <div class="tournament-list">
+          <div class="t-item">
+            <div class="t-item-top">
+              <div class="t-item-name">NEXUS Open Season 3</div>
+              <div class="t-badge live">● LIVE</div>
+              <div class="t-badge public">PUBLIC</div>
+            </div>
+            <div class="t-item-meta">
+              <div class="t-meta-item">🎮 Valorant</div>
+              <div class="t-meta-item">QF · R4</div>
+              <div class="t-meta-item">⚖️ 1.5×</div>
+            </div>
+            <div class="t-progress"><div class="t-prog-track"><div class="t-prog-fill" style="width:75%"></div></div></div>
+          </div>
+          <div class="t-item">
+            <div class="t-item-top">
+              <div class="t-item-name">Mumbai City Championship</div>
+              <div class="t-badge club">CLUB</div>
+            </div>
+            <div class="t-item-meta">
+              <div class="t-meta-item">🎮 Valorant</div>
+              <div class="t-meta-item">Round Robin · R2</div>
+            </div>
+            <div class="t-progress"><div class="t-prog-track"><div class="t-prog-fill" style="width:40%"></div></div></div>
+          </div>
+          <div class="t-item">
+            <div class="t-item-top">
+              <div class="t-item-name">Asia Invitational 2026</div>
+              <div class="t-badge private">PRIVATE</div>
+            </div>
+            <div class="t-item-meta">
+              <div class="t-meta-item">🎮 CS2</div>
+              <div class="t-meta-item">Starts in 2 days</div>
+            </div>
+            <div class="t-progress"><div class="t-prog-track"><div class="t-prog-fill" style="width:0%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECOND TWO COL -->
+    <div class="two-col">
+      <!-- MATCH HISTORY -->
+      <div class="section-card">
+        <div class="sc-header">
+          <span class="sc-header-icon">⚔️</span>
+          <span class="sc-header-title">Recent Matches</span>
+          <span class="sc-header-action">SEE ALL</span>
+        </div>
+        <div class="match-list">
+          <div class="match-item"><div class="match-result win">W</div><div><div class="match-opp">vs Kira</div><div class="match-game">Valorant · NEXUS Open</div></div><div><div class="match-elo gain">+16</div><div class="match-time">2h ago</div></div></div>
+          <div class="match-item"><div class="match-result win">W</div><div><div class="match-opp">vs Striker99</div><div class="match-game">Valorant · NEXUS Open</div></div><div><div class="match-elo gain">+14</div><div class="match-time">Yesterday</div></div></div>
+          <div class="match-item"><div class="match-result win">W</div><div><div class="match-opp">vs PhantomX</div><div class="match-game">Valorant · City Champ</div></div><div><div class="match-elo gain">+12</div><div class="match-time">2d ago</div></div></div>
+          <div class="match-item"><div class="match-result loss">L</div><div><div class="match-opp">vs Predator</div><div class="match-game">Valorant · NEXUS Open</div></div><div><div class="match-elo lose">-9</div><div class="match-time">3d ago</div></div></div>
+          <div class="match-item"><div class="match-result win">W</div><div><div class="match-opp">vs NightOwl</div><div class="match-game">CS2 · Asia Invitational</div></div><div><div class="match-elo gain">+11</div><div class="match-time">4d ago</div></div></div>
+        </div>
+      </div>
+
+      <!-- NOTIFICATIONS -->
+      <div class="section-card">
+        <div class="sc-header">
+          <span class="sc-header-icon">🔔</span>
+          <span class="sc-header-title">Notifications</span>
+          <span class="sc-header-action">MARK ALL READ</span>
+        </div>
+        <div class="notif-list">
+          <div class="notif-item unread"><div class="notif-dot2"></div><div class="notif-body"><div class="notif-title">Match Scheduled</div><div class="notif-msg">Your QF match vs Kira starts in 47 minutes — NEXUS Open S3</div></div><div class="notif-time">47m</div></div>
+          <div class="notif-item unread"><div class="notif-dot2"></div><div class="notif-body"><div class="notif-title">Rank Updated</div><div class="notif-msg">You moved to #1 in Mumbai after beating Striker99</div></div><div class="notif-time">2h</div></div>
+          <div class="notif-item unread"><div class="notif-dot2"></div><div class="notif-body"><div class="notif-title">Achievement Unlocked</div><div class="notif-msg">🏆 "City Dominator" — Reach #1 in City rankings</div></div><div class="notif-time">2h</div></div>
+          <div class="notif-item"><div class="notif-dot2 read"></div><div class="notif-body"><div class="notif-title">Club Invite</div><div class="notif-msg">NXS Warriors invited you to join their club</div></div><div class="notif-time">1d</div></div>
+          <div class="notif-item"><div class="notif-dot2 read"></div><div class="notif-body"><div class="notif-title">Tournament Win</div><div class="notif-msg">You won the Mumbai Weekly Cup! +10 bonus ELO awarded</div></div><div class="notif-time">3d</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACHIEVEMENTS -->
+    <div class="section-card">
+      <div class="sc-header">
+        <span class="sc-header-icon">🎖️</span>
+        <span class="sc-header-title">Achievements</span>
+        <span class="sc-header-action">8 / 24 EARNED</span>
+      </div>
+      <div class="ach-grid">
+        <div class="ach-item"><div class="ach-icon">🏆</div><div class="ach-name">First Win</div></div>
+        <div class="ach-item"><div class="ach-icon">🔥</div><div class="ach-name">5 Win Streak</div></div>
+        <div class="ach-item"><div class="ach-icon">🌆</div><div class="ach-name">City Dominator</div></div>
+        <div class="ach-item"><div class="ach-icon">⚔️</div><div class="ach-name">100 Matches</div></div>
+        <div class="ach-item"><div class="ach-icon">🌏</div><div class="ach-name">Top 100 Asia</div></div>
+        <div class="ach-item"><div class="ach-icon">👑</div><div class="ach-name">Tournament Win</div></div>
+        <div class="ach-item"><div class="ach-icon">🤝</div><div class="ach-name">Club Member</div></div>
+        <div class="ach-item"><div class="ach-icon">🎯</div><div class="ach-name">Multi-Game</div></div>
+        <div class="ach-item locked"><div class="ach-icon">🌐</div><div class="ach-name">Top 100 Global</div></div>
+        <div class="ach-item locked"><div class="ach-icon">🔟</div><div class="ach-name">10 Win Streak</div></div>
+        <div class="ach-item locked"><div class="ach-icon">🏅</div><div class="ach-name">Country #1</div></div>
+        <div class="ach-item locked"><div class="ach-icon">💎</div><div class="ach-name">500 Matches</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — Bracket View</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700&family=Share+Tech+Mono&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#060810;--bg2:#0c1020;--bg3:#121828;--neon:#00f5c4;--yellow:#f5c400;--pink:#f500c4;--blue:#0084ff;--red:#ff3c5a;--text:#c8d4e8;--muted:#4a566e;--border:rgba(0,245,196,0.1);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;}
+  .grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(0,245,196,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,196,0.015) 1px,transparent 1px);background-size:50px 50px;}
+
+  /* TOP BAR */
+  .topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50;}
+  .back-btn{font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px;transition:color 0.2s;}
+  .back-btn:hover{color:var(--neon);}
+  .divider-v{width:1px;height:24px;background:var(--border);}
+  .tour-info{}
+  .tour-name{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:3px;}
+  .tour-meta{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;}
+  .tb-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+  .live-badge{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;padding:4px 12px;border:1px solid rgba(255,60,90,0.4);color:var(--red);display:flex;align-items:center;gap:6px;}
+  .live-dot{width:6px;height:6px;background:var(--red);border-radius:50%;animation:blink 1s ease infinite;}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+  .view-btn{font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;padding:6px 16px;border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all 0.2s;background:transparent;}
+  .view-btn.active,.view-btn:hover{border-color:var(--neon);color:var(--neon);}
+
+  /* TOURNAMENT META BAR */
+  .meta-bar{padding:12px 32px;background:rgba(12,16,32,0.8);border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
+  .mb-item{display:flex;align-items:center;gap:8px;}
+  .mb-icon{font-size:13px;}
+  .mb-label{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;}
+  .mb-val{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;letter-spacing:1px;color:var(--text);}
+  .mb-sep{width:1px;height:20px;background:rgba(255,255,255,0.06);}
+  .prize-badge{font-family:'Share Tech Mono',monospace;font-size:10px;padding:3px 10px;border:1px solid rgba(245,196,0,0.3);color:var(--yellow);}
+
+  /* BRACKET AREA */
+  .bracket-wrap{padding:32px;overflow-x:auto;position:relative;z-index:1;}
+  .bracket{display:flex;gap:0;align-items:flex-start;min-width:1100px;}
+
+  /* ROUND */
+  .round{display:flex;flex-direction:column;gap:0;min-width:200px;flex-shrink:0;}
+  .round-header{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--muted);padding:8px 16px;text-align:center;margin-bottom:0;border-bottom:1px solid rgba(255,255,255,0.04);}
+  .round-matches{display:flex;flex-direction:column;}
+
+  /* CONNECTOR */
+  .connector{width:32px;flex-shrink:0;position:relative;}
+  .connector svg{position:absolute;inset:0;width:100%;height:100%;}
+
+  /* MATCH CARD */
+  .match-slot{padding:16px 0;display:flex;align-items:center;}
+  .match-card{width:100%;border:1px solid;background:var(--bg2);transition:all 0.2s;cursor:pointer;position:relative;overflow:hidden;}
+  .match-card:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+  .match-card.completed{border-color:rgba(255,255,255,0.08);}
+  .match-card.live-match{border-color:rgba(255,60,90,0.4);box-shadow:0 0 20px rgba(255,60,90,0.1);}
+  .match-card.live-match::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--red);}
+  .match-card.pending{border-color:rgba(255,255,255,0.06);}
+
+  .mc-player{display:flex;align-items:center;gap:10px;padding:9px 12px;position:relative;}
+  .mc-player + .mc-player{border-top:1px solid rgba(255,255,255,0.06);}
+  .mc-seed{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);width:16px;text-align:center;flex-shrink:0;}
+  .mc-avatar{width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;flex-shrink:0;}
+  .mc-name{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;letter-spacing:1px;flex:1;color:var(--text);}
+  .mc-elo{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);}
+  .mc-score{font-family:'Bebas Neue',sans-serif;font-size:20px;line-height:1;min-width:24px;text-align:right;}
+  .mc-win-indicator{position:absolute;left:0;top:0;bottom:0;width:2px;}
+
+  /* Player states */
+  .mc-player.winner .mc-name{color:#fff;}
+  .mc-player.winner .mc-win-indicator{background:var(--neon);}
+  .mc-player.winner .mc-score{color:var(--neon);}
+  .mc-player.winner .mc-avatar{background:rgba(0,245,196,0.15);color:var(--neon);}
+  .mc-player.loser .mc-name{color:var(--muted);}
+  .mc-player.loser .mc-score{color:var(--muted);}
+  .mc-player.loser .mc-avatar{background:rgba(255,255,255,0.05);color:var(--muted);}
+  .mc-player.pending-p .mc-name{color:var(--muted);}
+  .mc-player.pending-p .mc-avatar{background:rgba(255,255,255,0.04);color:var(--muted);}
+  .mc-player.you .mc-name::after{content:'YOU';font-size:9px;padding:1px 5px;background:rgba(0,245,196,0.15);color:var(--neon);margin-left:6px;letter-spacing:1px;font-family:'Share Tech Mono',monospace;}
+  .mc-player.live-p .mc-name{color:#fff;}
+  .mc-player.live-p .mc-avatar{background:rgba(255,60,90,0.15);color:var(--red);}
+
+  /* CHAMPION SLOT */
+  .champion-slot{padding:20px 0;display:flex;align-items:center;}
+  .champion-card{width:100%;border:1px solid rgba(245,196,0,0.4);background:linear-gradient(135deg,rgba(245,196,0,0.08),rgba(245,0,196,0.04));padding:20px 16px;text-align:center;position:relative;}
+  .champion-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--yellow),var(--pink));}
+  .champion-crown{font-size:28px;margin-bottom:6px;}
+  .champion-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--yellow);letter-spacing:3px;margin-bottom:8px;}
+  .champion-name{font-family:'Bebas Neue',sans-serif;font-size:28px;color:#fff;letter-spacing:3px;}
+  .champion-elo{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);}
+
+  /* SIDEBAR PANEL */
+  .bracket-layout{display:grid;grid-template-columns:1fr 280px;gap:0;}
+  .side-panel{border-left:1px solid var(--border);background:var(--bg2);position:sticky;top:64px;height:calc(100vh - 120px);overflow-y:auto;}
+  .sp-header{padding:16px 20px;border-bottom:1px solid var(--border);}
+  .sp-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:2px;color:#fff;margin-bottom:2px;}
+  .sp-sub{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;}
+
+  .sp-section{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.04);}
+  .sp-section-title{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;}
+
+  .live-match-detail{background:rgba(255,60,90,0.06);border:1px solid rgba(255,60,90,0.2);padding:14px;}
+  .lmd-players{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .lmd-player{flex:1;text-align:center;}
+  .lmd-pname{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:#fff;}
+  .lmd-rating{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);}
+  .lmd-vs{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--muted);}
+  .lmd-status{display:flex;align-items:center;gap:6px;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);}
+
+  .standings-list{}
+  .stand-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);}
+  .stand-item:last-child{border-bottom:none;}
+  .stand-pos{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--muted);width:24px;}
+  .stand-avatar{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;flex-shrink:0;}
+  .stand-name{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;color:var(--text);flex:1;}
+  .stand-wins{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--neon);}
+  .stand-status{font-size:10px;}
+
+  /* ROUND SPACERS for visual alignment */
+  .round-match-group{display:flex;flex-direction:column;justify-content:space-around;flex:1;}
+
+  .r1-gap{gap:8px;}
+  .r2-gap{gap:72px;}
+  .r3-gap{gap:200px;}
+
+  .conn-line{stroke:rgba(0,245,196,0.2);stroke-width:1;fill:none;}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="back-btn" onclick="window.location.href='/dashboard'" style="cursor:pointer">← Dashboard</div>
+  <div class="divider-v"></div>
+  <div class="tour-info">
+    <div class="tour-name">NEXUS Open Season 3</div>
+    <div class="tour-meta">VALORANT · SINGLE ELIMINATION · 16 PLAYERS</div>
+  </div>
+  <div class="tb-right">
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    <button class="view-btn active">Bracket</button>
+    <button class="view-btn">Participants</button>
+    <button class="view-btn">Rules</button>
+    <button class="view-btn">Submit Result</button>
+  </div>
+</div>
+
+<!-- META BAR -->
+<div class="meta-bar">
+  <div class="mb-item"><span class="mb-icon">🎮</span><span class="mb-label">GAME:</span><span class="mb-val">Valorant</span></div>
+  <div class="mb-sep"></div>
+  <div class="mb-item"><span class="mb-icon">🏆</span><span class="mb-label">FORMAT:</span><span class="mb-val">Single Elimination</span></div>
+  <div class="mb-sep"></div>
+  <div class="mb-item"><span class="mb-icon">👥</span><span class="mb-label">PLAYERS:</span><span class="mb-val">16 / 16</span></div>
+  <div class="mb-sep"></div>
+  <div class="mb-item"><span class="mb-icon">📅</span><span class="mb-label">STARTED:</span><span class="mb-val">Feb 19, 2026</span></div>
+  <div class="mb-sep"></div>
+  <div class="mb-item"><span class="mb-icon">⚖️</span><span class="mb-label">ELO WEIGHT:</span><span class="mb-val">1.5×</span></div>
+  <div class="mb-sep"></div>
+  <div class="mb-item"><span class="mb-icon">🔓</span><span class="mb-label">TYPE:</span><span class="mb-val">PUBLIC</span></div>
+  <div class="mb-sep"></div>
+  <div class="prize-badge">🏅 TOP 3 EARN BONUS ELO</div>
+</div>
+
+<div class="bracket-layout">
+  <!-- BRACKET -->
+  <div class="bracket-wrap">
+    <div class="bracket">
+
+      <!-- ROUND OF 16 -->
+      <div class="round">
+        <div class="round-header">Round of 16</div>
+        <div class="round-match-group r1-gap" style="padding-top:8px">
+
+          <div class="match-slot"><div class="match-card completed">
+            <div class="mc-player winner you"><div class="mc-win-indicator"></div><div class="mc-seed">1</div><div class="mc-avatar" style="background:rgba(0,245,196,0.15);color:var(--neon)">AP</div><div class="mc-name">Apex</div><div class="mc-elo">1466</div><div class="mc-score" style="color:var(--neon)">13</div></div>
+            <div class="mc-player loser"><div class="mc-win-indicator"></div><div class="mc-seed">16</div><div class="mc-avatar" style="background:rgba(255,255,255,0.05);color:var(--muted)">NW</div><div class="mc-name">NightOwl</div><div class="mc-elo">1120</div><div class="mc-score" style="color:var(--muted)">5</div></div>
+          </div></div>
+
+          <div class="match-slot"><div class="match-card completed">
+            <div class="mc-player winner"><div class="mc-win-indicator"></div><div class="mc-seed">8</div><div class="mc-avatar" style="background:rgba(0,245,196,0.1);color:var(--neon)">PX</div><div class="mc-name">PhantomX</div><div class="mc-elo">1280</div><div class="mc-score" style="color:var(--neon)">13</div></div>
+            <div class="mc-player loser"><div class="mc-win-indicator"></div><div class="mc-seed">9</div><div class="mc-avatar" style="background:rgba(255,255,255,0.05);color:var(--muted)">ZR</div><div class="mc-name">Zrexx</div><div class="mc-elo">1240</div><div class="mc-score" style="color:var(--muted)">8</div></div>
+          </div></div>
+
+          <div class="match-slot"><div class="match-card completed">
+            <div class="mc-player winner"><div class="mc-win-indicator"></div><div class="mc-seed">4</div><div class="mc-avatar" style="background:rgba(0,245,196,0.1);color:var(--neon)">KR</div><div class="mc-name">Kira</div><div class="mc-elo">1600</div><div class="mc-score" style="color:var(--neon)">13</div></div>
+            <div class="mc-player loser"><div class="mc-win-indicator"></div><div class="mc-seed">13</div><div class="mc-avatar" style="background:rgba(255,255,255,0.05);color:var(--muted)">SK</div><div class="mc-name">SkyFall</div><div class="mc-elo">1150</div><div class="mc-score" style="color:var(--muted)">3</div></div>
+          </div></div>
+
+          <div class="match-slot"><div class="match-card completed">
+            <div class="mc-player winner"><div class="mc-win-indicator"></div><div class="mc-seed">5</div><div class="mc-avatar" style="background:rgba(0,245,196,0.1);color:var(--neon)">PR</div><div class="mc-name">Predator</div><div class="mc-elo">1520</div><div class="mc-score" style="color:var(--neon)">13</div></div>
+            <div class="mc-player loser"><div class="mc-win-indicator"></div><div class="mc-seed">12</div><div class="mc-avatar" style="background:rgba(255,255,255,0.05);color:var(--muted)">BL</div><div class="mc-name">BladeX</div><div class="mc-elo">1200</div><div class="mc-score" style="color:var(--muted)">9</div></div>
+          </div></div>
+
+          <div class="match-slot"><div class="match-card completed">
+            <div class="mc-player winner"><div class="mc-win-indicator"></div><div class="mc-seed">2</div><div class="mc-avatar" style="background:rgba(0,245,196,0.1);color:var(--neon)">S9</div><div class="mc-name">Striker99</div><div class="mc-elo">1540</div><div class="mc-score" style="color:var(--neon)">13</div></div>
+            <div class="mc-player loser"><div class="mc-win-indicator"></div><div class="mc-seed">15</div><div class="mc-avatar" style="background:rgba(255,255,255,0.05);color:var(--muted)">GH</div><div class="mc-name">Ghost</div><div class="mc-elo">1100</div><div class="mc-score" style="color:var(--muted)">6</div></div>
+          </div></div>
+
+          <div class="match-slot"><div class="match-card completed">
+            <div class="mc-player winner"><div class="mc-win-indicator"></div><div class="mc-seed">7</div><div class="mc-avatar" style="background:rgba(0,245,196,0.1);color:var(--neon)">VI</div><div class="mc-name">Viper</div><div class="mc-elo">1310</div><div class="mc-score" style="color:var(--neon)">13</div></div>
+            <div class="mc-player loser"><div class="mc-win-indicator"></div><div class="mc-seed">10</div><div class="mc-avatar" style="background:rgba(255,255,255,0.05);color:var(--muted)">RM</div><div class="mc-name">Rime</div><div class="mc-elo">1230</div><div class="mc-score" style="color:var(--muted)">11</div></div>
+          </div></div>
+
+          <div class="match-slot"><div class="match-card completed">
+            <div class="mc-player winner"><div class="mc-win-indicator"></div><div class="mc-seed">3</div><div class="mc-avatar" style="background:rgba(0,245,196,0.1);color:var(--neon)">CY</div><div class="mc-name">Cypher</div><div class="mc-elo">1580</div><div class="mc-score" style="color:var(--neon)">13</div></div>
+            <div class="mc-player loser"><div class="mc-win-indicator"></div><div class="mc-seed">14</div><div class="mc-avatar" style="background:rgba(255,255,255,0.05);color:var(--muted)">FA</div><div class="mc-name">Fang</div><div class="mc-elo">1130</div><div class="mc-score" style="color:var(--muted)">7</div></div>
+          </div></div>
+
+          <div class="match-slot"><div class="match-card completed">
+            <div class="mc-player winner"><div class="mc-win-indicator"></div><div class="mc-seed">6</div><div class="mc-avatar" style="background:rgba(0,245,196,0.1);color:var(--neon)">EC</div><div class="mc-name">Eclipse</div><div class="mc-elo">1380</div><div class="mc-score" style="color:var(--neon)">13</div></div>
+            <div class="mc-player loser"><div class="mc-win-indicator"></div><div class="mc-seed">11</div><div class="mc-avatar" style="background:rgba(255,255,255,0.05);color:var(--muted)">OX</div><div class="mc-name">Oxide</div><div class="mc-elo">1215</div><div class="mc-score" style="color:var(--muted)">8</div></div>
+          </div></div>
+
+        </div>
+      </div>
+
+      <!-- CONNECTOR SVG R16 → QF -->
+      <div class="connector" style="width:40px;margin-top:42px">
+        <svg viewBox="0 0 40 800" preserveAspectRatio="none" style="width:40px;height:800px">
+          <path class="conn-line" d="M0,50 H20 V130 H40" />
+          <path class="conn-line" d="M0,130 H20" />
+          <path class="conn-line" d="M0,210 H20 V290 H40" />
+          <path class="conn-line" d="M0,290 H20" />
+          <path class="conn-line" d="M0,370 H20 V450 H40" />
+          <path class="conn-line" d="M0,450 H20" />
+          <path class="conn-line" d="M0,530 H20 V610 H40" />
+          <path class="conn-line" d="M0,610 H20" />
+        </svg>
+      </div>
+
+      <!-- QUARTERFINALS -->
+      <div class="round">
+        <div class="round-header">Quarterfinals</div>
+        <div class="round-match-group r2-gap" style="padding-top:50px">
+
+          <div class="match-slot"><div class="match-card completed">
+            <div class="mc-player winner you"><div class="mc-win-indicator"></div><div class="mc-seed">1</div><div class="mc-avatar" style="background:rgba(0,245,196,0.15);color:var(--neon)">AP</div><div class="mc-name">Apex</div><div class="mc-elo">1450</div><div class="mc-score" style="color:var(--neon)">13</div></div>
+            <div class="mc-player loser"><div class="mc-win-indicator"></div><div class="mc-seed">8</div><div class="mc-avatar" style="background:rgba(255,255,255,0.05);color:var(--muted)">PX</div><div class="mc-name">PhantomX</div><div class="mc-elo">1280</div><div class="mc-score" style="color:var(--muted)">9</div></div>
+          </div></div>
+
+          <div class="match-slot"><div class="match-card live-match">
+            <div class="mc-player live-p"><div class="mc-win-indicator" style="background:var(--red)"></div><div class="mc-seed">4</div><div class="mc-avatar" style="background:rgba(255,60,90,0.15);color:var(--red)">KR</div><div class="mc-name">Kira</div><div class="mc-elo">1600</div><div class="mc-score" style="color:#fff">8</div></div>
+            <div class="mc-player live-p"><div class="mc-win-indicator" style="background:var(--red)"></div><div class="mc-seed">5</div><div class="mc-avatar" style="background:rgba(255,60,90,0.15);color:var(--red)">PR</div><div class="mc-name">Predator</div><div class="mc-elo">1520</div><div class="mc-score" style="color:#fff">7</div></div>
+          </div></div>
+
+          <div class="match-slot"><div class="match-card completed">
+            <div class="mc-player winner"><div class="mc-win-indicator"></div><div class="mc-seed">2</div><div class="mc-avatar" style="background:rgba(0,245,196,0.1);color:var(--neon)">S9</div><div class="mc-name">Striker99</div><div class="mc-elo">1540</div><div class="mc-score" style="color:var(--neon)">13</div></div>
+            <div class="mc-player loser"><div class="mc-win-indicator"></div><div class="mc-seed">7</div><div class="mc-avatar" style="background:rgba(255,255,255,0.05);color:var(--muted)">VI</div><div class="mc-name">Viper</div><div class="mc-elo">1310</div><div class="mc-score" style="color:var(--muted)">10</div></div>
+          </div></div>
+
+          <div class="match-slot"><div class="match-card completed">
+            <div class="mc-player winner"><div class="mc-win-indicator"></div><div class="mc-seed">3</div><div class="mc-avatar" style="background:rgba(0,245,196,0.1);color:var(--neon)">CY</div><div class="mc-name">Cypher</div><div class="mc-elo">1580</div><div class="mc-score" style="color:var(--neon)">13</div></div>
+            <div class="mc-player loser"><div class="mc-win-indicator"></div><div class="mc-seed">6</div><div class="mc-avatar" style="background:rgba(255,255,255,0.05);color:var(--muted)">EC</div><div class="mc-name">Eclipse</div><div class="mc-elo">1380</div><div class="mc-score" style="color:var(--muted)">11</div></div>
+          </div></div>
+
+        </div>
+      </div>
+
+      <!-- CONNECTOR QF → SF -->
+      <div class="connector" style="width:40px;margin-top:42px">
+        <svg viewBox="0 0 40 800" preserveAspectRatio="none" style="width:40px;height:800px">
+          <path class="conn-line" d="M0,130 H20 V290 H40" />
+          <path class="conn-line" d="M0,290 H20" />
+          <path class="conn-line" d="M0,450 H20 V610 H40" />
+          <path class="conn-line" d="M0,610 H20" />
+        </svg>
+      </div>
+
+      <!-- SEMIFINALS -->
+      <div class="round">
+        <div class="round-header">Semifinals</div>
+        <div class="round-match-group r3-gap" style="padding-top:130px">
+
+          <div class="match-slot"><div class="match-card completed">
+            <div class="mc-player winner you"><div class="mc-win-indicator"></div><div class="mc-seed">1</div><div class="mc-avatar" style="background:rgba(0,245,196,0.15);color:var(--neon)">AP</div><div class="mc-name">Apex</div><div class="mc-elo">1452</div><div class="mc-score" style="color:var(--neon)">13</div></div>
+            <div class="mc-player loser"><div class="mc-win-indicator"></div><div class="mc-seed">2</div><div class="mc-avatar" style="background:rgba(255,255,255,0.05);color:var(--muted)">S9</div><div class="mc-name">Striker99</div><div class="mc-elo">1540</div><div class="mc-score" style="color:var(--muted)">11</div></div>
+          </div></div>
+
+          <div class="match-slot"><div class="match-card pending">
+            <div class="mc-player pending-p"><div class="mc-win-indicator" style="background:rgba(255,255,255,0.1)"></div><div class="mc-seed">?</div><div class="mc-avatar" style="background:rgba(255,255,255,0.04);color:var(--muted)">?</div><div class="mc-name" style="color:var(--muted)">TBD</div><div class="mc-elo" style="font-size:10px">Kira / Predator</div><div class="mc-score" style="color:var(--muted)">-</div></div>
+            <div class="mc-player pending-p"><div class="mc-win-indicator" style="background:rgba(255,255,255,0.1)"></div><div class="mc-seed">?</div><div class="mc-avatar" style="background:rgba(255,255,255,0.04);color:var(--muted)">CY</div><div class="mc-name" style="color:var(--muted)">Cypher</div><div class="mc-elo">Winner QF3</div><div class="mc-score" style="color:var(--muted)">-</div></div>
+          </div></div>
+
+        </div>
+      </div>
+
+      <!-- CONNECTOR SF → F -->
+      <div class="connector" style="width:40px;margin-top:42px">
+        <svg viewBox="0 0 40 800" preserveAspectRatio="none" style="width:40px;height:800px">
+          <path class="conn-line" d="M0,290 H20 V610 H40" />
+          <path class="conn-line" d="M0,610 H20" />
+        </svg>
+      </div>
+
+      <!-- FINAL -->
+      <div class="round">
+        <div class="round-header">Grand Final</div>
+        <div class="round-match-group" style="padding-top:420px">
+          <div class="match-slot"><div class="match-card pending" style="border-color:rgba(245,196,0,0.2)">
+            <div class="mc-player pending-p you"><div class="mc-win-indicator" style="background:rgba(245,196,0,0.5)"></div><div class="mc-seed">?</div><div class="mc-avatar" style="background:rgba(245,196,0,0.1);color:var(--yellow)">AP</div><div class="mc-name" style="color:var(--yellow)">Apex</div><div class="mc-elo">SF Winner</div><div class="mc-score" style="color:var(--muted)">-</div></div>
+            <div class="mc-player pending-p"><div class="mc-win-indicator" style="background:rgba(255,255,255,0.1)"></div><div class="mc-seed">?</div><div class="mc-avatar" style="background:rgba(255,255,255,0.04);color:var(--muted)">?</div><div class="mc-name" style="color:var(--muted)">TBD</div><div class="mc-elo">SF Winner</div><div class="mc-score" style="color:var(--muted)">-</div></div>
+          </div></div>
+        </div>
+      </div>
+
+      <!-- CHAMPION -->
+      <div class="round">
+        <div class="round-header">Champion</div>
+        <div style="padding-top:450px">
+          <div class="champion-slot">
+            <div class="champion-card">
+              <div class="champion-crown">👑</div>
+              <div class="champion-label">TOURNAMENT CHAMPION</div>
+              <div class="champion-name">TBD</div>
+              <div class="champion-elo">Final in progress...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SIDE PANEL -->
+  <div class="side-panel">
+    <div class="sp-header">
+      <div class="sp-title">Live Updates</div>
+      <div class="sp-sub">Auto-refreshing · API verified</div>
+    </div>
+
+    <div class="sp-section">
+      <div class="sp-section-title">● Live Match</div>
+      <div class="live-match-detail">
+        <div class="lmd-players">
+          <div class="lmd-player"><div class="lmd-pname">KIRA</div><div class="lmd-rating">ELO 1600</div></div>
+          <div class="lmd-vs">VS</div>
+          <div class="lmd-player"><div class="lmd-pname">PREDATOR</div><div class="lmd-rating">ELO 1520</div></div>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:#fff;text-align:center;letter-spacing:4px;margin:6px 0;">8 — 7</div>
+        <div class="lmd-status"><div class="live-dot"></div>ROUND 16 IN PROGRESS</div>
+      </div>
+    </div>
+
+    <div class="sp-section">
+      <div class="sp-section-title">Your Next Match</div>
+      <div style="background:rgba(0,245,196,0.05);border:1px solid rgba(0,245,196,0.15);padding:12px;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--neon);margin-bottom:6px;">QUARTER FINAL · YOUR BRACKET</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;color:#fff;font-weight:700;margin-bottom:4px;">Apex vs Kira</div>
+        <div style="font-size:12px;color:var(--muted);">Awaiting Kira/Predator result</div>
+        <div style="margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);">ELO at stake: +16 to +22 estimated</div>
+      </div>
+    </div>
+
+    <div class="sp-section">
+      <div class="sp-section-title">Bracket Standings</div>
+      <div class="standings-list">
+        <div class="stand-item"><div class="stand-pos" style="color:var(--yellow)">SF</div><div class="stand-avatar" style="background:rgba(0,245,196,0.15);color:var(--neon)">AP</div><div class="stand-name">Apex</div><div class="stand-wins" style="color:var(--neon)">3-0</div><div class="stand-status">🔥</div></div>
+        <div class="stand-item"><div class="stand-pos" style="color:var(--yellow)">SF</div><div class="stand-avatar" style="background:rgba(0,245,196,0.1);color:var(--neon)">CY</div><div class="stand-name">Cypher</div><div class="stand-wins">2-0</div><div class="stand-status">✅</div></div>
+        <div class="stand-item"><div class="stand-pos">QF</div><div class="stand-avatar" style="background:rgba(255,60,90,0.1);color:var(--red)">KR</div><div class="stand-name">Kira</div><div class="stand-wins">2-0</div><div class="stand-status">⚔️</div></div>
+        <div class="stand-item"><div class="stand-pos">QF</div><div class="stand-avatar" style="background:rgba(255,60,90,0.1);color:var(--red)">PR</div><div class="stand-name">Predator</div><div class="stand-wins">2-0</div><div class="stand-status">⚔️</div></div>
+        <div class="stand-item"><div class="stand-pos" style="color:var(--muted)">OUT</div><div class="stand-avatar" style="background:rgba(255,255,255,0.04);color:var(--muted)">S9</div><div class="stand-name" style="color:var(--muted)">Striker99</div><div class="stand-wins" style="color:var(--muted)">2-1</div><div class="stand-status">❌</div></div>
+        <div class="stand-item"><div class="stand-pos" style="color:var(--muted)">OUT</div><div class="stand-avatar" style="background:rgba(255,255,255,0.04);color:var(--muted)">EC</div><div class="stand-name" style="color:var(--muted)">Eclipse</div><div class="stand-wins" style="color:var(--muted)">1-1</div><div class="stand-status">❌</div></div>
+      </div>
+    </div>
+
+    <div class="sp-section">
+      <div class="sp-section-title">Result Log</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;padding:6px 8px;background:rgba(0,245,196,0.04);border-left:2px solid var(--neon);color:var(--muted);">Apex beat Striker99 13–11 · SF · 14 min ago</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;padding:6px 8px;background:rgba(0,245,196,0.04);border-left:2px solid var(--neon);color:var(--muted);">Cypher beat Eclipse 13–11 · SF · 21 min ago</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;padding:6px 8px;background:rgba(0,245,196,0.04);border-left:2px solid var(--neon);color:var(--muted);">Apex beat PhantomX 13–9 · QF · 1h ago</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;padding:6px 8px;background:rgba(0,245,196,0.04);border-left:2px solid var(--neon);color:var(--muted);">Striker99 beat Viper 13–10 · QF · 2h ago</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

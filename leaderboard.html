@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — Leaderboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700&family=Share+Tech+Mono&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#060810;--bg2:#0c1020;--bg3:#121828;--neon:#00f5c4;--yellow:#f5c400;--pink:#f500c4;--blue:#0084ff;--red:#ff3c5a;--orange:#ff8c42;--text:#c8d4e8;--muted:#4a566e;--border:rgba(0,245,196,0.1);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;font-weight:300;min-height:100vh;}
+  .grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(0,245,196,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,196,0.015) 1px,transparent 1px);background-size:50px 50px;}
+  ::-webkit-scrollbar{width:3px;}
+  ::-webkit-scrollbar-thumb{background:var(--neon);}
+
+  /* TOPBAR */
+  .topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:16px 40px;display:flex;align-items:center;gap:20px;position:sticky;top:0;z-index:50;}
+  .top-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:#fff;}
+  .top-logo span{color:var(--neon);}
+  .top-nav{display:flex;gap:4px;margin-left:24px;}
+  .tn-item{font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;padding:6px 14px;color:var(--muted);cursor:pointer;transition:color 0.2s;}
+  .tn-item.active,.tn-item:hover{color:var(--neon);}
+  .top-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+  .live-ind{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--neon);display:flex;align-items:center;gap:6px;}
+  .live-dot{width:6px;height:6px;background:var(--neon);border-radius:50%;animation:pulse 2s ease infinite;}
+  @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.4);}}
+
+  .content{padding:32px 40px;position:relative;z-index:1;max-width:1400px;margin:0 auto;}
+
+  /* PAGE HEADER */
+  .page-header{margin-bottom:32px;display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap;}
+  .ph-left{}
+  .ph-tag{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--neon);letter-spacing:3px;margin-bottom:8px;}
+  .ph-title{font-family:'Bebas Neue',sans-serif;font-size:52px;color:#fff;letter-spacing:4px;line-height:1;}
+  .ph-sub{font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-top:4px;}
+  .ph-right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;}
+
+  /* FILTER PILLS */
+  .filter-pill{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:7px 16px;border:1px solid rgba(255,255,255,0.1);color:var(--muted);cursor:pointer;transition:all 0.2s;background:transparent;}
+  .filter-pill.active,.filter-pill:hover{border-color:var(--neon);color:var(--neon);}
+  .filter-pill.scope-active{background:rgba(0,245,196,0.06);}
+
+  /* SCOPE TABS */
+  .scope-tabs{display:flex;gap:2px;margin-bottom:24px;background:var(--bg2);border:1px solid var(--border);padding:4px;}
+  .scope-tab{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:9px 18px;color:var(--muted);cursor:pointer;transition:all 0.25s;flex:1;text-align:center;position:relative;}
+  .scope-tab.active{color:var(--bg);background:var(--neon);}
+  .scope-tab:not(.active):hover{color:var(--text);}
+
+  /* FILTER ROW */
+  .filter-row{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;align-items:center;}
+  .filter-group{display:flex;gap:0;}
+  .filter-group .filter-pill:not(:last-child){border-right:none;}
+  .fr-label{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-right:4px;white-space:nowrap;}
+  .search-box{margin-left:auto;background:var(--bg2);border:1px solid var(--border);padding:8px 16px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--text);outline:none;width:220px;transition:border-color 0.2s;}
+  .search-box:focus{border-color:var(--neon);}
+  .search-box::placeholder{color:var(--muted);}
+
+  /* TOP 3 PODIUM */
+  .podium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px;margin-bottom:24px;align-items:end;}
+  .podium-card{padding:24px 20px;text-align:center;border:1px solid;position:relative;overflow:hidden;cursor:pointer;transition:all 0.3s;}
+  .podium-card:hover{transform:translateY(-4px);}
+  .pc-1{border-color:rgba(245,196,0,0.4);background:linear-gradient(180deg,rgba(245,196,0,0.08),var(--bg2));order:-1;}
+  .pc-1::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--yellow),var(--orange));}
+  .pc-2{border-color:rgba(200,212,232,0.2);background:var(--bg2);}
+  .pc-3{border-color:rgba(205,127,50,0.3);background:var(--bg2);}
+  .podium-rank{font-family:'Bebas Neue',sans-serif;font-size:48px;line-height:1;margin-bottom:6px;}
+  .pc-1 .podium-rank{color:var(--yellow);text-shadow:0 0 30px rgba(245,196,0,0.4);}
+  .pc-2 .podium-rank{color:#aaa;}
+  .pc-3 .podium-rank{color:#cd7f32;}
+  .podium-crown{font-size:24px;margin-bottom:8px;}
+  .podium-avatar{width:56px;height:56px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;border:2px solid;}
+  .pc-1 .podium-avatar{border-color:var(--yellow);background:rgba(245,196,0,0.1);color:var(--yellow);}
+  .pc-2 .podium-avatar{border-color:rgba(200,212,232,0.3);background:rgba(200,212,232,0.05);color:#aaa;}
+  .pc-3 .podium-avatar{border-color:rgba(205,127,50,0.4);background:rgba(205,127,50,0.05);color:#cd7f32;}
+  .podium-name{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px;margin-bottom:4px;}
+  .podium-elo{font-family:'Share Tech Mono',monospace;font-size:18px;font-weight:700;margin-bottom:4px;}
+  .pc-1 .podium-elo{color:var(--neon);}
+  .pc-2 .podium-elo,.pc-3 .podium-elo{color:var(--text);}
+  .podium-meta{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);}
+  .you-tag{font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 6px;background:rgba(0,245,196,0.15);color:var(--neon);letter-spacing:1px;}
+
+  /* LEADERBOARD TABLE */
+  .lb-table{width:100%;border-collapse:collapse;}
+  .lb-head{position:sticky;top:65px;z-index:20;}
+  .lb-th{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:10px 16px;text-align:left;background:var(--bg2);border-bottom:1px solid var(--border);}
+  .lb-th.sort{cursor:pointer;transition:color 0.2s;}
+  .lb-th.sort:hover,.lb-th.sort.active{color:var(--neon);}
+  .lb-th.sort::after{content:' ↕';}
+  .lb-th.sort.asc::after{content:' ↑';}
+  .lb-th.sort.desc::after{content:' ↓';}
+  .lb-th.right,.lb-td.right{text-align:right;}
+
+  .lb-tr{border-bottom:1px solid rgba(255,255,255,0.03);cursor:pointer;transition:background 0.15s;}
+  .lb-tr:hover{background:rgba(255,255,255,0.02);}
+  .lb-tr.you-row{background:rgba(0,245,196,0.04);border-left:2px solid var(--neon);}
+  .lb-tr.you-row:hover{background:rgba(0,245,196,0.06);}
+  .lb-td{padding:12px 16px;font-size:13px;color:var(--text);}
+  .lb-td.rank{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--muted);line-height:1;width:50px;}
+  .lb-td.rank.top3{color:var(--neon);}
+
+  .player-cell{display:flex;align-items:center;gap:12px;}
+  .p-avatar{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;flex-shrink:0;}
+  .p-name{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:600;letter-spacing:1px;color:#fff;}
+  .p-name-sub{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);}
+  .p-you{font-family:'Share Tech Mono',monospace;font-size:9px;padding:1px 5px;background:rgba(0,245,196,0.15);color:var(--neon);margin-left:6px;letter-spacing:1px;}
+
+  .elo-cell{font-family:'Bebas Neue',sans-serif;font-size:24px;color:#fff;line-height:1;}
+  .change-cell{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;}
+  .change-cell.up{color:var(--neon);}
+  .change-cell.down{color:var(--red);}
+  .wr-cell{font-size:13px;}
+  .wr-bar{height:3px;background:rgba(255,255,255,0.06);margin-top:4px;}
+  .wr-fill{height:100%;background:var(--neon);}
+
+  .games-cell{display:flex;gap:4px;}
+  .game-tag{font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 6px;border:1px solid rgba(255,255,255,0.1);color:var(--muted);}
+  .game-tag.active{border-color:rgba(0,245,196,0.3);color:var(--neon);}
+
+  .flag{font-size:16px;}
+
+  .peak-cell{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);}
+  .peak-cell span{color:var(--yellow);}
+
+  /* PAGINATION */
+  .pagination{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:24px;padding-top:24px;border-top:1px solid rgba(255,255,255,0.04);}
+  .page-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:12px;border:1px solid rgba(255,255,255,0.08);color:var(--muted);cursor:pointer;transition:all 0.2s;}
+  .page-btn.active,.page-btn:hover{border-color:var(--neon);color:var(--neon);}
+  .page-btn.active{background:rgba(0,245,196,0.06);}
+
+  /* YOUR POSITION STICKY CARD */
+  .your-pos-card{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid rgba(0,245,196,0.3);padding:14px 20px;display:flex;align-items:center;gap:14px;z-index:100;box-shadow:0 8px 32px rgba(0,0,0,0.5);}
+  .ypc-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--neon);letter-spacing:2px;}
+  .ypc-rank{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--neon);line-height:1;}
+  .ypc-elo{font-family:'Barlow Condensed',sans-serif;font-size:14px;color:var(--text);}
+  .ypc-delta{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--neon);}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="top-logo" onclick="window.location.href='/'" style="cursor:pointer">NEX<span>US</span></div>
+  <div class="top-nav">
+    <div class="tn-item" onclick="window.location.href='/dashboard'" style="cursor:pointer">Dashboard</div>
+    <div class="tn-item" onclick="window.location.href='/bracket'" style="cursor:pointer">Tournaments</div>
+    <div class="tn-item active">Leaderboard</div>
+    <div class="tn-item">Clubs</div>
+  </div>
+  <div class="top-right">
+    <div class="live-ind"><div class="live-dot"></div>LIVE RANKINGS</div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <div class="ph-left">
+      <div class="ph-tag">▸ COMPETITIVE RANKINGS · PHASE 1</div>
+      <div class="ph-title">LEADERBOARD</div>
+      <div class="ph-sub">Valorant · Global Scope · All time</div>
+    </div>
+    <div class="ph-right">
+      <select style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:8px 14px;font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:1px;outline:none;cursor:pointer;">
+        <option>Valorant</option>
+        <option>CS2</option>
+        <option>League of Legends</option>
+        <option>Dota 2</option>
+        <option>Rocket League</option>
+        <option>Apex Legends</option>
+      </select>
+      <select style="background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:8px 14px;font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:1px;outline:none;cursor:pointer;">
+        <option>All Time</option>
+        <option>This Season</option>
+        <option>This Month</option>
+        <option>This Week</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- SCOPE TABS -->
+  <div class="scope-tabs">
+    <div class="scope-tab active" onclick="setScope(this,'global')">🌐 Global</div>
+    <div class="scope-tab" onclick="setScope(this,'continent')">🌏 Continent</div>
+    <div class="scope-tab" onclick="setScope(this,'country')">🏳️ Country</div>
+    <div class="scope-tab" onclick="setScope(this,'state')">📍 State</div>
+    <div class="scope-tab" onclick="setScope(this,'city')">🏙️ City</div>
+    <div class="scope-tab" onclick="setScope(this,'club')">🏢 Club</div>
+    <div class="scope-tab" onclick="setScope(this,'college')">🎓 College</div>
+  </div>
+
+  <!-- FILTER ROW -->
+  <div class="filter-row">
+    <span class="fr-label">REGION:</span>
+    <div class="filter-group">
+      <div class="filter-pill active scope-active" onclick="setFilter(this)">All</div>
+      <div class="filter-pill" onclick="setFilter(this)">Asia</div>
+      <div class="filter-pill" onclick="setFilter(this)">Europe</div>
+      <div class="filter-pill" onclick="setFilter(this)">NA</div>
+      <div class="filter-pill" onclick="setFilter(this)">SA</div>
+    </div>
+    <span class="fr-label" style="margin-left:8px">FORMAT:</span>
+    <div class="filter-group">
+      <div class="filter-pill active scope-active" onclick="setFilter(this)">All Tournaments</div>
+      <div class="filter-pill" onclick="setFilter(this)">Public Only</div>
+      <div class="filter-pill" onclick="setFilter(this)">Club Only</div>
+    </div>
+    <input class="search-box" type="text" placeholder="Search players...">
+  </div>
+
+  <!-- PODIUM TOP 3 -->
+  <div class="podium">
+    <!-- 2nd -->
+    <div class="podium-card pc-2">
+      <div class="podium-rank">2</div>
+      <div class="podium-avatar">KR</div>
+      <div class="podium-name">KIRA</div>
+      <div class="podium-elo">1600</div>
+      <div class="podium-meta">🇮🇳 India · 284W / 112L · 71.7%</div>
+    </div>
+    <!-- 1st -->
+    <div class="podium-card pc-1">
+      <div class="podium-rank">1</div>
+      <div class="podium-crown">👑</div>
+      <div class="podium-avatar">ZX</div>
+      <div class="podium-name">ZeNiTH</div>
+      <div class="podium-elo">1742</div>
+      <div class="podium-meta">🇰🇷 South Korea · 512W / 148L · 77.6%</div>
+    </div>
+    <!-- 3rd -->
+    <div class="podium-card pc-3">
+      <div class="podium-rank">3</div>
+      <div class="podium-avatar">CY</div>
+      <div class="podium-name">CYPHER</div>
+      <div class="podium-elo">1580</div>
+      <div class="podium-meta">🇮🇳 India · 198W / 74L · 72.8%</div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <table class="lb-table">
+    <thead class="lb-head">
+      <tr>
+        <th class="lb-th" style="width:50px">#</th>
+        <th class="lb-th">Player</th>
+        <th class="lb-th sort active desc">ELO</th>
+        <th class="lb-th sort">Change</th>
+        <th class="lb-th sort">Win Rate</th>
+        <th class="lb-th right">W / L</th>
+        <th class="lb-th right">Peak</th>
+        <th class="lb-th">Country</th>
+      </tr>
+    </thead>
+    <tbody id="lb-body">
+      <!-- rows injected by JS -->
+    </tbody>
+  </table>
+
+  <!-- PAGINATION -->
+  <div class="pagination">
+    <div class="page-btn">←</div>
+    <div class="page-btn active">1</div>
+    <div class="page-btn">2</div>
+    <div class="page-btn">3</div>
+    <div class="page-btn">...</div>
+    <div class="page-btn">89</div>
+    <div class="page-btn">→</div>
+  </div>
+
+</div>
+
+<!-- YOUR POSITION STICKY -->
+<div class="your-pos-card">
+  <div>
+    <div class="ypc-label">YOUR RANK</div>
+    <div class="ypc-rank">#4821</div>
+  </div>
+  <div>
+    <div class="ypc-elo">Apex · 1466 ELO</div>
+    <div class="ypc-delta">▲ +16 today</div>
+  </div>
+</div>
+
+<script>
+  const PLAYERS = [
+    {r:4, name:'Predator', sub:'predatorFPS', elo:1522, change:+18, w:301, l:118, country:'🇮🇳', peak:1548, you:false},
+    {r:5, name:'Striker99', sub:'S99Gaming', elo:1497, change:-7, w:410, l:195, country:'🇯🇵', peak:1541, you:false},
+    {r:6, name:'Eclipse', sub:'EclipseVal', elo:1480, change:+11, w:198, l:88, country:'🇵🇭', peak:1490, you:false},
+    {r:7, name:'Viper', sub:'ViperPro', elo:1468, change:+4, w:152, l:74, country:'🇮🇩', peak:1472, you:false},
+    {r:8, name:'PhantomX', sub:'PX_Ace', elo:1440, change:-3, w:220, l:120, country:'🇮🇳', peak:1468, you:false},
+    {r:9, name:'NightOwl', sub:'N0wl_Aim', elo:1420, change:+9, w:168, l:95, country:'🇨🇳', peak:1435, you:false},
+    {r:10, name:'BladeX', sub:'BladeXGG', elo:1401, change:-12, w:140, l:88, country:'🇰🇷', peak:1445, you:false},
+    {r:4821, name:'Apex', sub:'Apex#7731', elo:1466, change:+16, w:67, l:28, country:'🇮🇳', peak:1466, you:true},
+  ];
+
+  function wr(w,l){return Math.round(w/(w+l)*100);}
+
+  function renderTable() {
+    const body = document.getElementById('lb-body');
+    // Sort: you-row at bottom, rest sorted by rank
+    const normal = PLAYERS.filter(p=>!p.you).sort((a,b)=>a.r-b.r);
+    const you = PLAYERS.filter(p=>p.you);
+    const all = [...normal, ...you];
+    body.innerHTML = all.map(p=>`
+      <tr class="lb-tr ${p.you?'you-row':''}">
+        <td class="lb-td rank ${p.r<=10?'top3':''}">${p.r}</td>
+        <td class="lb-td">
+          <div class="player-cell">
+            <div class="p-avatar" style="background:${p.you?'rgba(0,245,196,0.15)':'rgba(255,255,255,0.05)'};color:${p.you?'var(--neon)':'var(--muted)'}">
+              ${p.name.slice(0,2).toUpperCase()}
+            </div>
+            <div>
+              <div class="p-name">${p.name}${p.you?'<span class="p-you">YOU</span>':''}</div>
+              <div class="p-name-sub">${p.sub}</div>
+            </div>
+          </div>
+        </td>
+        <td class="lb-td"><div class="elo-cell">${p.elo}</div></td>
+        <td class="lb-td"><div class="change-cell ${p.change>=0?'up':'down'}">${p.change>=0?'▲ +'+p.change:'▼ '+p.change}</div></td>
+        <td class="lb-td">
+          <div class="wr-cell">${wr(p.w,p.l)}%</div>
+          <div class="wr-bar"><div class="wr-fill" style="width:${wr(p.w,p.l)}%"></div></div>
+        </td>
+        <td class="lb-td right" style="font-family:'Share Tech Mono',monospace;font-size:12px"><span style="color:var(--neon)">${p.w}W</span> / <span style="color:var(--red)">${p.l}L</span></td>
+        <td class="lb-td right"><div class="peak-cell"><span>${p.peak}</span></div></td>
+        <td class="lb-td"><span class="flag">${p.country}</span></td>
+      </tr>
+    `).join('');
+  }
+
+  function setScope(el, scope) {
+    document.querySelectorAll('.scope-tab').forEach(t=>t.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function setFilter(el) {
+    const group = el.closest('.filter-group');
+    if(group) group.querySelectorAll('.filter-pill').forEach(p=>{p.classList.remove('active','scope-active');});
+    el.classList.add('active','scope-active');
+  }
+
+  renderTable();
+</script>
+</body>
+</html>
