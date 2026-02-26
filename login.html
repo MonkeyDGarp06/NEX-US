@@ -1,1209 +1,805 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NEXUS — Tournament Management Platform</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400;500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #060810;
-    --bg2: #0b0f1a;
-    --bg3: #10162a;
-    --neon: #00f5c4;
-    --neon2: #f5c400;
-    --neon3: #f500c4;
-    --red: #ff3c5a;
-    --blue: #0084ff;
-    --text: #c8d4e8;
-    --muted: #4a566e;
-    --border: rgba(0,245,196,0.12);
-    --glow: 0 0 20px rgba(0,245,196,0.4), 0 0 60px rgba(0,245,196,0.1);
-    --glow-yellow: 0 0 20px rgba(245,196,0,0.5), 0 0 60px rgba(245,196,0,0.15);
-  }
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  html { scroll-behavior: smooth; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Barlow', sans-serif;
-    font-weight: 300;
-    overflow-x: hidden;
-  }
-
-  /* SCROLLBAR */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--neon); border-radius: 2px; }
-
-  /* GRID BACKGROUND */
-  .grid-bg {
-    position: fixed; inset: 0; pointer-events: none; z-index: 0;
-    background-image:
-      linear-gradient(rgba(0,245,196,0.025) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,245,196,0.025) 1px, transparent 1px);
-    background-size: 60px 60px;
-  }
-
-  /* NAV */
-  nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 18px 60px;
-    background: linear-gradient(180deg, rgba(6,8,16,0.95) 0%, transparent 100%);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(0,245,196,0.06);
-  }
-
-  .logo {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px;
-    letter-spacing: 6px;
-    color: #fff;
-    display: flex; align-items: center; gap: 10px;
-  }
-  .logo-icon {
-    width: 32px; height: 32px;
-    background: var(--neon);
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    display: flex; align-items: center; justify-content: center;
-    position: relative;
-  }
-  .logo span { color: var(--neon); }
-
-  .nav-links {
-    display: flex; gap: 36px; list-style: none;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 14px; font-weight: 500; letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-  .nav-links a {
-    color: var(--muted); text-decoration: none;
-    transition: color 0.3s;
-  }
-  .nav-links a:hover { color: var(--neon); }
-
-  .nav-cta {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 13px; font-weight: 600; letter-spacing: 3px;
-    text-transform: uppercase;
-    padding: 10px 24px;
-    border: 1px solid var(--neon);
-    color: var(--neon);
-    background: transparent;
-    cursor: pointer;
-    transition: all 0.3s;
-    position: relative; overflow: hidden;
-  }
-  .nav-cta::before {
-    content: ''; position: absolute; inset: 0;
-    background: var(--neon); transform: translateX(-101%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .nav-cta:hover::before { transform: translateX(0); }
-  .nav-cta:hover { color: var(--bg); }
-  .nav-cta span { position: relative; z-index: 1; }
-
-  /* PHASE BADGE */
-  .phase-badge {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px; color: var(--neon2);
-    border: 1px solid rgba(245,196,0,0.3);
-    padding: 4px 12px;
-    background: rgba(245,196,0,0.05);
-    letter-spacing: 2px;
-  }
-
-  /* HERO */
-  .hero {
-    min-height: 100vh;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    text-align: center;
-    padding: 120px 40px 80px;
-    position: relative;
-  }
-
-  .hero-orb {
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 700px; height: 700px;
-    background: radial-gradient(ellipse, rgba(0,245,196,0.06) 0%, transparent 70%);
-    pointer-events: none;
-  }
-
-  .hero-eyebrow {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 12px; color: var(--neon);
-    letter-spacing: 4px; text-transform: uppercase;
-    margin-bottom: 24px;
-    display: flex; align-items: center; gap: 12px;
-  }
-  .hero-eyebrow::before, .hero-eyebrow::after {
-    content: ''; flex: 1; max-width: 60px;
-    height: 1px; background: var(--neon); opacity: 0.4;
-  }
-
-  .hero-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(72px, 12vw, 160px);
-    line-height: 0.88;
-    letter-spacing: -2px;
-    color: #fff;
-    margin-bottom: 8px;
-    animation: fadeUp 1s ease both;
-  }
-
-  .hero-title .accent {
-    -webkit-text-stroke: 2px var(--neon);
-    color: transparent;
-    text-shadow: var(--glow);
-    display: block;
-  }
-
-  .hero-sub {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: clamp(14px, 2vw, 20px);
-    font-weight: 400; letter-spacing: 5px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 48px;
-    animation: fadeUp 1s 0.2s ease both;
-  }
-
-  .hero-stats {
-    display: flex; gap: 60px;
-    margin-bottom: 60px;
-    animation: fadeUp 1s 0.4s ease both;
-  }
-  .stat { text-align: center; }
-  .stat-num {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 52px; color: #fff; line-height: 1;
-    text-shadow: 0 0 30px rgba(255,255,255,0.2);
-  }
-  .stat-num span { color: var(--neon); }
-  .stat-label {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 11px; letter-spacing: 3px;
-    text-transform: uppercase; color: var(--muted);
-    margin-top: 6px;
-  }
-
-  .hero-actions {
-    display: flex; gap: 16px;
-    animation: fadeUp 1s 0.6s ease both;
-  }
-
-  .btn-primary {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 14px; font-weight: 700; letter-spacing: 4px;
-    text-transform: uppercase;
-    padding: 16px 44px;
-    background: var(--neon);
-    color: var(--bg);
-    border: none; cursor: pointer;
-    position: relative; overflow: hidden;
-    transition: all 0.3s;
-    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
-  }
-  .btn-primary:hover {
-    box-shadow: var(--glow);
-    transform: translateY(-2px);
-  }
-
-  .btn-secondary {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 14px; font-weight: 600; letter-spacing: 4px;
-    text-transform: uppercase;
-    padding: 16px 44px;
-    background: transparent;
-    color: var(--text);
-    border: 1px solid var(--border);
-    cursor: pointer; transition: all 0.3s;
-    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
-  }
-  .btn-secondary:hover {
-    border-color: var(--neon);
-    color: var(--neon);
-  }
-
-  /* TICKER */
-  .ticker-wrap {
-    width: 100%; overflow: hidden;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    background: rgba(0,245,196,0.02);
-    padding: 12px 0;
-    margin: 20px 0;
-  }
-  .ticker {
-    display: flex; gap: 0;
-    animation: ticker 30s linear infinite;
-    white-space: nowrap;
-  }
-  .ticker-item {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 12px; letter-spacing: 2px;
-    color: var(--muted);
-    padding: 0 40px;
-    display: flex; align-items: center; gap: 12px;
-  }
-  .ticker-item::before {
-    content: '◆'; color: var(--neon); font-size: 8px;
-  }
-  @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-
-  /* SECTION */
-  section {
-    position: relative; z-index: 1;
-    padding: 100px 60px;
-    max-width: 1400px; margin: 0 auto;
-  }
-
-  .section-header {
-    margin-bottom: 64px;
-  }
-
-  .section-tag {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px; color: var(--neon);
-    letter-spacing: 4px; text-transform: uppercase;
-    margin-bottom: 16px;
-    display: flex; align-items: center; gap: 12px;
-  }
-  .section-tag::before {
-    content: ''; width: 30px; height: 1px;
-    background: var(--neon);
-  }
-
-  .section-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(40px, 6vw, 72px);
-    line-height: 0.95;
-    color: #fff; letter-spacing: 1px;
-  }
-  .section-title .dim { color: var(--muted); }
-
-  /* TOURNAMENT TYPES */
-  .tournament-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
-  }
-
-  .t-card {
-    background: var(--bg2);
-    padding: 48px 40px;
-    position: relative; overflow: hidden;
-    cursor: pointer; transition: all 0.4s;
-    border: 1px solid transparent;
-  }
-  .t-card::before {
-    content: ''; position: absolute;
-    top: 0; left: 0; right: 0; height: 2px;
-    background: var(--card-accent, var(--neon));
-    transform: scaleX(0);
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .t-card:hover::before { transform: scaleX(1); }
-  .t-card:hover {
-    border-color: var(--card-accent, var(--neon));
-    background: var(--bg3);
-    transform: translateY(-4px);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-  }
-
-  .t-card.public { --card-accent: var(--neon); }
-  .t-card.private { --card-accent: var(--neon2); }
-  .t-card.club { --card-accent: var(--neon3); }
-
-  .t-card-icon {
-    width: 56px; height: 56px; margin-bottom: 28px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 24px;
-    border: 1px solid rgba(255,255,255,0.08);
-    position: relative;
-  }
-  .t-card.public .t-card-icon { border-color: rgba(0,245,196,0.3); color: var(--neon); }
-  .t-card.private .t-card-icon { border-color: rgba(245,196,0,0.3); color: var(--neon2); }
-  .t-card.club .t-card-icon { border-color: rgba(245,0,196,0.3); color: var(--neon3); }
-
-  .t-card-label {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-  .t-card.public .t-card-label { color: var(--neon); }
-  .t-card.private .t-card-label { color: var(--neon2); }
-  .t-card.club .t-card-label { color: var(--neon3); }
-
-  .t-card-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 36px; color: #fff;
-    letter-spacing: 2px; margin-bottom: 16px;
-  }
-
-  .t-card-desc {
-    font-size: 14px; line-height: 1.7;
-    color: var(--muted); margin-bottom: 32px;
-  }
-
-  .t-features {
-    display: flex; flex-direction: column; gap: 10px;
-  }
-  .t-feature {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 13px; letter-spacing: 1px;
-    color: var(--text);
-    display: flex; align-items: center; gap: 10px;
-  }
-  .t-feature::before {
-    content: '→'; font-size: 12px;
-  }
-  .t-card.public .t-feature::before { color: var(--neon); }
-  .t-card.private .t-feature::before { color: var(--neon2); }
-  .t-card.club .t-feature::before { color: var(--neon3); }
-
-  .t-card-num {
-    position: absolute; bottom: 24px; right: 28px;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 80px; line-height: 1;
-    opacity: 0.04; color: #fff;
-    pointer-events: none;
-  }
-
-  /* GAMES SECTION */
-  .games-section { background: var(--bg); }
-
-  .games-marquee-wrap {
-    overflow: hidden; margin-top: 48px;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    padding: 4px 0;
-  }
-
-  .games-row {
-    display: flex; gap: 0;
-    animation: ticker 25s linear infinite;
-  }
-  .games-row.rev { animation-direction: reverse; }
-
-  .game-chip {
-    display: flex; align-items: center; gap: 12px;
-    padding: 20px 28px;
-    border-right: 1px solid var(--border);
-    white-space: nowrap;
-    transition: all 0.3s;
-    cursor: default;
-  }
-  .game-chip:hover { background: rgba(0,245,196,0.04); }
-
-  .game-chip-icon {
-    width: 36px; height: 36px; border-radius: 4px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-  }
-
-  .game-chip-name {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 15px; font-weight: 500; letter-spacing: 1px;
-    color: var(--text);
-  }
-  .game-chip-genre {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px; color: var(--muted); letter-spacing: 1px;
-  }
-
-  .games-count {
-    text-align: center; margin-top: 48px;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 80px; color: #fff; letter-spacing: 8px;
-    line-height: 1;
-  }
-  .games-count span { color: var(--neon); text-shadow: var(--glow); }
-  .games-count-sub {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 14px; letter-spacing: 6px; text-transform: uppercase;
-    color: var(--muted); text-align: center; margin-top: 8px;
-  }
-
-  /* RATING SYSTEM */
-  .rating-section {
-    background: linear-gradient(180deg, var(--bg) 0%, var(--bg2) 50%, var(--bg) 100%);
-  }
-
-  .rating-pyramid {
-    display: flex; flex-direction: column; align-items: center;
-    gap: 6px; margin: 64px auto; max-width: 700px;
-  }
-
-  .rating-level {
-    display: flex; align-items: center; justify-content: center;
-    position: relative; cursor: default;
-    transition: all 0.3s;
-  }
-  .rating-level:hover { transform: scaleX(1.02); }
-
-  .rating-level-inner {
-    display: flex; align-items: center;
-    gap: 16px; padding: 16px 32px;
-    border: 1px solid; width: 100%;
-    position: relative; overflow: hidden;
-  }
-  .rating-level-inner::before {
-    content: ''; position: absolute;
-    left: 0; top: 0; bottom: 0; width: 3px;
-    background: currentColor;
-  }
-
-  .r-global .rating-level-inner { border-color: rgba(245,196,0,0.3); color: var(--neon2); background: rgba(245,196,0,0.04); width: 100%; }
-  .r-continent .rating-level-inner { border-color: rgba(0,245,196,0.25); color: var(--neon); background: rgba(0,245,196,0.03); width: 92%; }
-  .r-country .rating-level-inner { border-color: rgba(0,132,255,0.25); color: var(--blue); background: rgba(0,132,255,0.03); width: 82%; }
-  .r-state .rating-level-inner { border-color: rgba(245,0,196,0.25); color: var(--neon3); background: rgba(245,0,196,0.03); width: 70%; }
-  .r-city .rating-level-inner { border-color: rgba(255,60,90,0.25); color: var(--red); background: rgba(255,60,90,0.03); width: 58%; }
-  .r-club .rating-level-inner { border-color: rgba(255,255,255,0.15); color: #fff; background: rgba(255,255,255,0.02); width: 46%; }
-
-  .r-rank {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px; line-height: 1; min-width: 40px;
-  }
-  .r-name {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 18px; font-weight: 600; letter-spacing: 3px;
-    text-transform: uppercase; flex: 1;
-  }
-  .r-desc {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px; color: var(--muted);
-  }
-
-  /* FEATURES GRID */
-  .features-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
-    background: var(--border);
-    border: 1px solid var(--border);
-  }
-
-  .feature-cell {
-    background: var(--bg2);
-    padding: 40px 32px;
-    transition: all 0.3s;
-  }
-  .feature-cell:hover {
-    background: var(--bg3);
-  }
-
-  .feature-icon {
-    font-size: 28px; margin-bottom: 20px;
-    display: block;
-  }
-
-  .feature-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 18px; font-weight: 600; letter-spacing: 2px;
-    text-transform: uppercase; color: #fff;
-    margin-bottom: 12px;
-  }
-
-  .feature-desc {
-    font-size: 13px; line-height: 1.7; color: var(--muted);
-  }
-
-  /* PHASE SECTION */
-  .phase-section {
-    border: 1px solid var(--border);
-    padding: 80px;
-    position: relative; overflow: hidden;
-    background: var(--bg2);
-  }
-
-  .phase-section::before {
-    content: 'PHASE 01';
-    position: absolute; right: -20px; top: 50%;
-    transform: translateY(-50%) rotate(90deg);
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 120px; color: rgba(0,245,196,0.03);
-    letter-spacing: 20px; pointer-events: none;
-    white-space: nowrap;
-  }
-
-  .phase-content {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
-    align-items: center;
-  }
-
-  .phase-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 64px; line-height: 0.9;
-    color: #fff; letter-spacing: 2px;
-    margin-bottom: 24px;
-  }
-  .phase-title .phase-num {
-    display: block;
-    font-size: 120px;
-    -webkit-text-stroke: 1px rgba(0,245,196,0.4);
-    color: transparent;
-    line-height: 1;
-  }
-
-  .phase-list {
-    display: flex; flex-direction: column; gap: 20px;
-  }
-  .phase-item {
-    display: flex; gap: 20px; align-items: flex-start;
-  }
-  .phase-item-num {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 12px; color: var(--neon);
-    min-width: 28px; margin-top: 2px;
-  }
-  .phase-item-text { font-size: 15px; line-height: 1.6; color: var(--text); }
-  .phase-item-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 16px; font-weight: 600; letter-spacing: 1px;
-    color: #fff; margin-bottom: 4px;
-  }
-
-  .progress-bar {
-    margin-top: 40px;
-  }
-  .progress-label {
-    display: flex; justify-content: space-between;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 13px; letter-spacing: 2px; text-transform: uppercase;
-    color: var(--muted); margin-bottom: 12px;
-  }
-  .progress-label span { color: var(--neon); }
-  .progress-track {
-    height: 3px; background: rgba(255,255,255,0.06);
-    position: relative;
-  }
-  .progress-fill {
-    height: 100%; background: var(--neon);
-    box-shadow: var(--glow);
-    animation: fillBar 2s ease 0.5s both;
-    position: relative;
-  }
-  .progress-fill::after {
-    content: '';
-    position: absolute; right: 0; top: 50%;
-    transform: translateY(-50%);
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--neon);
-    box-shadow: var(--glow);
-  }
-  @keyframes fillBar { from { width: 0; } }
-
-  /* API SECTION */
-  .api-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    padding: 40px;
-    position: relative; overflow: hidden;
-  }
-
-  .api-card::before {
-    content: '';
-    position: absolute; top: 0; right: 0;
-    width: 200px; height: 200px;
-    background: radial-gradient(ellipse at top right, rgba(0,245,196,0.08), transparent 70%);
-    pointer-events: none;
-  }
-
-  .code-block {
-    background: var(--bg);
-    border: 1px solid rgba(0,245,196,0.08);
-    padding: 28px 32px;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 13px; line-height: 2;
-    color: var(--text);
-    margin-top: 24px;
-    position: relative;
-  }
-  .code-block::before {
-    content: 'LIVE API · GAME DATA';
-    position: absolute; top: -1px; right: -1px;
-    font-size: 10px; letter-spacing: 2px;
-    padding: 4px 12px;
-    background: var(--neon); color: var(--bg);
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 700;
-  }
-
-  .code-key { color: var(--neon); }
-  .code-val { color: var(--neon2); }
-  .code-str { color: #ff9d52; }
-  .code-num { color: #52c8ff; }
-  .code-comment { color: var(--muted); }
-
-  /* FOOTER */
-  footer {
-    border-top: 1px solid var(--border);
-    padding: 60px 60px 40px;
-    display: flex; justify-content: space-between; align-items: flex-end;
-    position: relative; z-index: 1;
-  }
-
-  .footer-logo {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 48px; letter-spacing: 8px; color: #fff;
-    line-height: 1;
-  }
-  .footer-logo span { color: var(--neon); }
-
-  .footer-tagline {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 12px; letter-spacing: 3px; text-transform: uppercase;
-    color: var(--muted); margin-top: 4px;
-  }
-
-  .footer-right {
-    text-align: right;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  /* DIVIDER */
-  .divider {
-    height: 1px; background: var(--border);
-    margin: 0 60px;
-    position: relative; z-index: 1;
-  }
-
-  /* ANIMATIONS */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .fade-in {
-    opacity: 0; transform: translateY(24px);
-    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .fade-in.visible { opacity: 1; transform: none; }
-
-  /* CURSOR */
-  .cursor {
-    display: inline-block; width: 2px; height: 1em;
-    background: var(--neon); animation: blink 1s infinite;
-    vertical-align: text-bottom; margin-left: 2px;
-  }
-  @keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
-
-  /* STATUS DOT */
-  .status-dot {
-    display: inline-block;
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--neon); margin-right: 6px;
-    box-shadow: 0 0 8px var(--neon);
-    animation: pulse 2s ease infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.4); opacity: 0.7; }
-  }
-
-  /* RESPONSIVE */
-  @media (max-width: 1024px) {
-    nav { padding: 16px 24px; }
-    .nav-links { display: none; }
-    section { padding: 60px 24px; }
-    .tournament-grid { grid-template-columns: 1fr; }
-    .features-grid { grid-template-columns: repeat(2, 1fr); }
-    .phase-content { grid-template-columns: 1fr; gap: 40px; }
-    .phase-section { padding: 40px 24px; }
-    footer { padding: 40px 24px; flex-direction: column; gap: 24px; align-items: flex-start; }
-    .divider { margin: 0 24px; }
-  }
-</style>
-</head>
-<body>
-
-<div class="grid-bg"></div>
-
-<!-- NAV -->
-<nav>
-  <div class="logo">
-    <div class="logo-icon"></div>
-    NEX<span>US</span>
-  </div>
-  <ul class="nav-links">
-    <li><a href="#tournaments">Tournaments</a></li>
-    <li><a href="#games">Games</a></li>
-    <li><a href="#ratings">Rankings</a></li>
-    <li><a href="#api">API</a></li>
-    <li><a href="#phase">Roadmap</a></li>
-  </ul>
-  <div style="display:flex;align-items:center;gap:16px">
-    <div class="phase-badge">⚡ PHASE 1 · LIVE</div>
-    <button class="nav-cta" onclick="window.location.href='/login'"><span>Launch App</span></button>
-  </div>
-</nav>
-
-<!-- HERO -->
-<div class="hero" style="position:relative;z-index:1">
-  <div class="hero-orb"></div>
-  <div class="hero-eyebrow">
-    <span class="status-dot"></span>
-    Tournament Management Platform · Phase 1
-  </div>
-  <h1 class="hero-title">
-    COMPETE
-    <span class="accent">AT SCALE</span>
-  </h1>
-  <p class="hero-sub">Tournaments · Clubs · Global Rankings · Game APIs</p>
-  <div class="hero-stats">
-    <div class="stat">
-      <div class="stat-num"><span>20</span>+</div>
-      <div class="stat-label">Supported Games</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num">3</div>
-      <div class="stat-label">Tournament Types</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num"><span>7</span></div>
-      <div class="stat-label">Rating Scopes</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num">∞</div>
-      <div class="stat-label">Possibilities</div>
-    </div>
-  </div>
-  <div class="hero-actions">
-    <button class="btn-primary" onclick="window.location.href='/login'">Start a Tournament</button>
-    <button class="btn-secondary" onclick="window.location.href='/leaderboard'">Explore Platform</button>
-  </div>
-</div>
-
-<!-- TICKER -->
-<div class="ticker-wrap" style="position:relative;z-index:1">
-  <div class="ticker">
-    <div class="ticker-item">PUBLIC TOURNAMENT</div>
-    <div class="ticker-item">CLUB CHAMPIONSHIP</div>
-    <div class="ticker-item">PRIVATE BRACKET</div>
-    <div class="ticker-item">GLOBAL LEADERBOARD</div>
-    <div class="ticker-item">GAME API INTEGRATION</div>
-    <div class="ticker-item">ELO RATING SYSTEM</div>
-    <div class="ticker-item">LIVE MATCH TRACKING</div>
-    <div class="ticker-item">PLAYER ANALYTICS</div>
-    <div class="ticker-item">CLUB MANAGEMENT</div>
-    <div class="ticker-item">CONTINENT RANKINGS</div>
-    <div class="ticker-item">PUBLIC TOURNAMENT</div>
-    <div class="ticker-item">CLUB CHAMPIONSHIP</div>
-    <div class="ticker-item">PRIVATE BRACKET</div>
-    <div class="ticker-item">GLOBAL LEADERBOARD</div>
-    <div class="ticker-item">GAME API INTEGRATION</div>
-    <div class="ticker-item">ELO RATING SYSTEM</div>
-    <div class="ticker-item">LIVE MATCH TRACKING</div>
-    <div class="ticker-item">PLAYER ANALYTICS</div>
-    <div class="ticker-item">CLUB MANAGEMENT</div>
-    <div class="ticker-item">CONTINENT RANKINGS</div>
-  </div>
-</div>
-
-<!-- TOURNAMENT TYPES -->
-<section id="tournaments">
-  <div class="section-header fade-in">
-    <div class="section-tag">Tournament Types</div>
-    <h2 class="section-title">THREE WAYS<br><span class="dim">TO COMPETE</span></h2>
-  </div>
-  <div class="tournament-grid fade-in">
-    <div class="t-card public">
-      <div class="t-card-icon">🌐</div>
-      <div class="t-card-label">Open Access</div>
-      <div class="t-card-title">Public Tournament</div>
-      <div class="t-card-desc">Open to all registered players worldwide. Compete on a global stage and earn ranking points visible across all regional leaderboards.</div>
-      <div class="t-features">
-        <div class="t-feature">Global ranking integration</div>
-        <div class="t-feature">Open registration & seeding</div>
-        <div class="t-feature">Live bracket tracking</div>
-        <div class="t-feature">Prize pool support</div>
-        <div class="t-feature">Spectator mode enabled</div>
-      </div>
-      <div class="t-card-num">01</div>
-    </div>
-    <div class="t-card private">
-      <div class="t-card-icon">🔒</div>
-      <div class="t-card-label">Invite Only</div>
-      <div class="t-card-title">Private Tournament</div>
-      <div class="t-card-desc">Restricted access with invite codes or approval. Host exclusive events for your community with custom rules and formats.</div>
-      <div class="t-features">
-        <div class="t-feature">Invite-code access control</div>
-        <div class="t-feature">Custom format builder</div>
-        <div class="t-feature">Internal leaderboard</div>
-        <div class="t-feature">Admin moderation tools</div>
-        <div class="t-feature">Optional public visibility</div>
-      </div>
-      <div class="t-card-num">02</div>
-    </div>
-    <div class="t-card club">
-      <div class="t-card-icon">🏆</div>
-      <div class="t-card-label">Club Level</div>
-      <div class="t-card-title">Club Tournament</div>
-      <div class="t-card-desc">Exclusive to club members. Build your club's reputation with inter-club championships or internal skill ladders.</div>
-      <div class="t-features">
-        <div class="t-feature">Club ELO rating impact</div>
-        <div class="t-feature">Member roster management</div>
-        <div class="t-feature">Club vs Club format</div>
-        <div class="t-feature">College affiliation support</div>
-        <div class="t-feature">Club ranking on leaderboard</div>
-      </div>
-      <div class="t-card-num">03</div>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- GAMES -->
-<section id="games" style="padding-top:80px;padding-bottom:40px;max-width:none">
-  <div style="max-width:1400px;margin:0 auto;padding:0 60px">
-    <div class="section-header fade-in" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:24px">
-      <div>
-        <div class="section-tag">Supported Games</div>
-        <h2 class="section-title">TOP COMPETITIVE<br><span class="dim">TITLES</span></h2>
-      </div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)">
-        Phase 1 · 20 Games · Full API Support
-      </div>
-    </div>
-  </div>
-
-  <div class="games-marquee-wrap">
-    <div class="games-row">
-      <div class="game-chip"><div class="game-chip-icon">🎮</div><div><div class="game-chip-name">Valorant</div><div class="game-chip-genre">FPS · TACTICAL</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">⚔️</div><div><div class="game-chip-name">League of Legends</div><div class="game-chip-genre">MOBA · STRATEGY</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🔫</div><div><div class="game-chip-name">CS2</div><div class="game-chip-genre">FPS · TACTICAL</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🌊</div><div><div class="game-chip-name">Dota 2</div><div class="game-chip-genre">MOBA · STRATEGY</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🏟️</div><div><div class="game-chip-name">Fortnite</div><div class="game-chip-genre">BATTLE ROYALE</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🥊</div><div><div class="game-chip-name">Street Fighter 6</div><div class="game-chip-genre">FIGHTING</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🚀</div><div><div class="game-chip-name">Rocket League</div><div class="game-chip-genre">SPORTS · ACTION</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🎯</div><div><div class="game-chip-name">Apex Legends</div><div class="game-chip-genre">BATTLE ROYALE</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🃏</div><div><div class="game-chip-name">Hearthstone</div><div class="game-chip-genre">CARD GAME</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">⚡</div><div><div class="game-chip-name">Overwatch 2</div><div class="game-chip-genre">FPS · HERO</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🎮</div><div><div class="game-chip-name">Valorant</div><div class="game-chip-genre">FPS · TACTICAL</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">⚔️</div><div><div class="game-chip-name">League of Legends</div><div class="game-chip-genre">MOBA · STRATEGY</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🔫</div><div><div class="game-chip-name">CS2</div><div class="game-chip-genre">FPS · TACTICAL</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🌊</div><div><div class="game-chip-name">Dota 2</div><div class="game-chip-genre">MOBA · STRATEGY</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🏟️</div><div><div class="game-chip-name">Fortnite</div><div class="game-chip-genre">BATTLE ROYALE</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🥊</div><div><div class="game-chip-name">Street Fighter 6</div><div class="game-chip-genre">FIGHTING</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🚀</div><div><div class="game-chip-name">Rocket League</div><div class="game-chip-genre">SPORTS · ACTION</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🎯</div><div><div class="game-chip-name">Apex Legends</div><div class="game-chip-genre">BATTLE ROYALE</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🃏</div><div><div class="game-chip-name">Hearthstone</div><div class="game-chip-genre">CARD GAME</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">⚡</div><div><div class="game-chip-name">Overwatch 2</div><div class="game-chip-genre">FPS · HERO</div></div></div>
-    </div>
-  </div>
-  <div class="games-marquee-wrap" style="margin-top:2px">
-    <div class="games-row rev">
-      <div class="game-chip"><div class="game-chip-icon">🏰</div><div><div class="game-chip-name">Clash Royale</div><div class="game-chip-genre">MOBILE · STRATEGY</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🌟</div><div><div class="game-chip-name">PUBG</div><div class="game-chip-genre">BATTLE ROYALE</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🐉</div><div><div class="game-chip-name">Mobile Legends</div><div class="game-chip-genre">MOBA · MOBILE</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🔮</div><div><div class="game-chip-name">FIFA / EA FC</div><div class="game-chip-genre">SPORTS SIM</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🎭</div><div><div class="game-chip-name">Tekken 8</div><div class="game-chip-genre">FIGHTING</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🏆</div><div><div class="game-chip-name">Call of Duty</div><div class="game-chip-genre">FPS · TACTICAL</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">⚡</div><div><div class="game-chip-name">Rainbow Six Siege</div><div class="game-chip-genre">FPS · TACTICAL</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🌀</div><div><div class="game-chip-name">Smite</div><div class="game-chip-genre">MOBA · ACTION</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🎲</div><div><div class="game-chip-name">Teamfight Tactics</div><div class="game-chip-genre">AUTO BATTLER</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">💫</div><div><div class="game-chip-name">Warzone</div><div class="game-chip-genre">BATTLE ROYALE</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🏰</div><div><div class="game-chip-name">Clash Royale</div><div class="game-chip-genre">MOBILE · STRATEGY</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🌟</div><div><div class="game-chip-name">PUBG</div><div class="game-chip-genre">BATTLE ROYALE</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🐉</div><div><div class="game-chip-name">Mobile Legends</div><div class="game-chip-genre">MOBA · MOBILE</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🔮</div><div><div class="game-chip-name">FIFA / EA FC</div><div class="game-chip-genre">SPORTS SIM</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🎭</div><div><div class="game-chip-name">Tekken 8</div><div class="game-chip-genre">FIGHTING</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🏆</div><div><div class="game-chip-name">Call of Duty</div><div class="game-chip-genre">FPS · TACTICAL</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">⚡</div><div><div class="game-chip-name">Rainbow Six Siege</div><div class="game-chip-genre">FPS · TACTICAL</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🌀</div><div><div class="game-chip-name">Smite</div><div class="game-chip-genre">MOBA · ACTION</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">🎲</div><div><div class="game-chip-name">Teamfight Tactics</div><div class="game-chip-genre">AUTO BATTLER</div></div></div>
-      <div class="game-chip"><div class="game-chip-icon">💫</div><div><div class="game-chip-name">Warzone</div><div class="game-chip-genre">BATTLE ROYALE</div></div></div>
-    </div>
-  </div>
-
-  <div style="max-width:1400px;margin:0 auto;padding:0 60px">
-    <div class="games-count fade-in">
-      <span>20</span>+ GAMES
-    </div>
-    <div class="games-count-sub fade-in">Full API integration · Live stats · In-game data pull</div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- RATINGS -->
-<section id="ratings" class="rating-section">
-  <div class="section-header fade-in" style="text-align:center">
-    <div class="section-tag" style="justify-content:center">
-      <span>Rating Architecture</span>
-    </div>
-    <h2 class="section-title">ONE PLAYER<br><span class="dim">SEVEN SCOPES</span></h2>
-    <p style="font-size:15px;color:var(--muted);max-width:540px;margin:16px auto 0;line-height:1.7">
-      Every match you play ripples through multiple leaderboards simultaneously — from your local city rank all the way to the global stage.
-    </p>
-  </div>
-  <div class="rating-pyramid fade-in">
-    <div class="rating-level r-global" style="width:100%">
-      <div class="rating-level-inner">
-        <div class="r-rank">01</div>
-        <div class="r-name">Global</div>
-        <div class="r-desc">WORLDWIDE · ALL PLAYERS</div>
-      </div>
-    </div>
-    <div class="rating-level r-continent" style="width:100%;display:flex;justify-content:center">
-      <div class="rating-level-inner" style="width:92%">
-        <div class="r-rank">02</div>
-        <div class="r-name">Continent</div>
-        <div class="r-desc">ASIA · EUROPE · AMERICAS · AFRICA · OCE</div>
-      </div>
-    </div>
-    <div class="rating-level r-country" style="display:flex;justify-content:center;width:100%">
-      <div class="rating-level-inner" style="width:82%">
-        <div class="r-rank">03</div>
-        <div class="r-name">Country</div>
-        <div class="r-desc">NATIONAL RANKING</div>
-      </div>
-    </div>
-    <div class="rating-level r-state" style="display:flex;justify-content:center;width:100%">
-      <div class="rating-level-inner" style="width:70%">
-        <div class="r-rank">04</div>
-        <div class="r-name">State / Province</div>
-        <div class="r-desc">REGIONAL SCOPE</div>
-      </div>
-    </div>
-    <div class="rating-level r-city" style="display:flex;justify-content:center;width:100%">
-      <div class="rating-level-inner" style="width:58%">
-        <div class="r-rank">05</div>
-        <div class="r-name">City</div>
-        <div class="r-desc">LOCAL SCENE</div>
-      </div>
-    </div>
-    <div class="rating-level r-club" style="display:flex;justify-content:center;width:100%">
-      <div class="rating-level-inner" style="width:46%">
-        <div class="r-rank">06–07</div>
-        <div class="r-name">Club · College</div>
-        <div class="r-desc">COMMUNITY TIER</div>
-      </div>
-    </div>
-  </div>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:8px" class="fade-in">
-    <div style="background:var(--bg2);padding:28px 32px;border:1px solid var(--border)">
-      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--neon);letter-spacing:3px;margin-bottom:12px">ALGORITHM</div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:600;letter-spacing:2px;color:#fff;margin-bottom:8px">ELO-Based Engine</div>
-      <div style="font-size:13px;color:var(--muted);line-height:1.7">Modified ELO with K-factor adjustments based on tournament tier, opponent strength, and win streak multipliers.</div>
-    </div>
-    <div style="background:var(--bg2);padding:28px 32px;border:1px solid var(--border)">
-      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--neon2);letter-spacing:3px;margin-bottom:12px">INTEGRITY</div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:600;letter-spacing:2px;color:#fff;margin-bottom:8px">Tamper-Proof Scores</div>
-      <div style="font-size:13px;color:var(--muted);line-height:1.7">API-verified match results pulled directly from game servers. No manual score entry for supported titles.</div>
-    </div>
-    <div style="background:var(--bg2);padding:28px 32px;border:1px solid var(--border)">
-      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--neon3);letter-spacing:3px;margin-bottom:12px">VISIBILITY</div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:600;letter-spacing:2px;color:#fff;margin-bottom:8px">Live Leaderboards</div>
-      <div style="font-size:13px;color:var(--muted);line-height:1.7">Real-time rank updates after every match. Filter by game, scope, time period, and tournament type.</div>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- FEATURES -->
-<section id="features">
-  <div class="section-header fade-in">
-    <div class="section-tag">Platform Capabilities</div>
-    <h2 class="section-title">BUILT FOR<br><span class="dim">SERIOUS PLAY</span></h2>
-  </div>
-  <div class="features-grid fade-in">
-    <div class="feature-cell">
-      <span class="feature-icon">⚙️</span>
-      <div class="feature-title">Tournament Builder</div>
-      <div class="feature-desc">Single elimination, double elimination, round robin, swiss, and custom hybrid formats with automatic bracket generation.</div>
-    </div>
-    <div class="feature-cell">
-      <span class="feature-icon">📊</span>
-      <div class="feature-title">Player Analytics</div>
-      <div class="feature-desc">Deep performance history per game — win rates, K/D ratios, placement averages, and rating trajectory over time.</div>
-    </div>
-    <div class="feature-cell">
-      <span class="feature-icon">🏢</span>
-      <div class="feature-title">Club Management</div>
-      <div class="feature-desc">Create and manage clubs, assign roles, track member performance, and build a club identity with custom branding.</div>
-    </div>
-    <div class="feature-cell">
-      <span class="feature-icon">🔌</span>
-      <div class="feature-title">Game API Bridge</div>
-      <div class="feature-desc">Native integration with official game APIs for auto-verified results, live in-game data, and enhanced match insights.</div>
-    </div>
-    <div class="feature-cell">
-      <span class="feature-icon">🔔</span>
-      <div class="feature-title">Smart Notifications</div>
-      <div class="feature-desc">Match reminders, bracket updates, rank changes, and result alerts delivered across web, mobile, and Discord.</div>
-    </div>
-    <div class="feature-cell">
-      <span class="feature-icon">🎖️</span>
-      <div class="feature-title">Achievement System</div>
-      <div class="feature-desc">Earn badges for milestones — first win, winning streaks, tournament finishes, and special event participation.</div>
-    </div>
-    <div class="feature-cell">
-      <span class="feature-icon">🌍</span>
-      <div class="feature-title">Multi-Region Support</div>
-      <div class="feature-desc">Simultaneous ranking across 7 geographic scopes ensures every player matters locally and globally at the same time.</div>
-    </div>
-    <div class="feature-cell">
-      <span class="feature-icon">🛡️</span>
-      <div class="feature-title">Anti-Cheat Layer</div>
-      <div class="feature-desc">API-based result verification, account authenticity checks, and behavioral flagging to keep competitive play fair.</div>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- API -->
-<section id="api">
-  <div class="section-header fade-in">
-    <div class="section-tag">Game API Integration</div>
-    <h2 class="section-title">LIVE DATA<br><span class="dim">FROM THE SOURCE</span></h2>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px" class="fade-in">
-    <div class="api-card">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:600;letter-spacing:2px;color:#fff;margin-bottom:12px">Match Result Verification</div>
-      <p style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:0">For every supported game, Nexus connects directly to the official game API to pull verified match outcomes. No self-reporting. No disputes. The game itself is the referee.</p>
-      <div class="code-block">
-        <span class="code-comment">// Valorant Match Result · Auto-fetched</span><br>
-        {<br>
-        &nbsp;&nbsp;<span class="code-key">"match_id"</span>: <span class="code-str">"valo_9af42b1c"</span>,<br>
-        &nbsp;&nbsp;<span class="code-key">"winner"</span>: <span class="code-str">"player_7731"</span>,<br>
-        &nbsp;&nbsp;<span class="code-key">"score"</span>: <span class="code-num">13</span> / <span class="code-num">8</span>,<br>
-        &nbsp;&nbsp;<span class="code-key">"acs"</span>: <span class="code-num">248.4</span>,<br>
-        &nbsp;&nbsp;<span class="code-key">"elo_delta"</span>: <span class="code-num">+22</span>,<br>
-        &nbsp;&nbsp;<span class="code-key">"verified"</span>: <span style="color:var(--neon)">true</span> ✓<br>
-        }
-      </div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:2px">
-      <div style="background:var(--bg2);padding:32px;border:1px solid var(--border);flex:1">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:600;letter-spacing:2px;color:#fff;margin-bottom:10px">Live In-Game Stats</div>
-        <p style="font-size:13px;color:var(--muted);line-height:1.7">Pull real-time K/D, damage, objectives, and economy data mid-match for enhanced spectator experience and detailed post-match analytics.</p>
-      </div>
-      <div style="background:var(--bg2);padding:32px;border:1px solid var(--border);flex:1">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:600;letter-spacing:2px;color:#fff;margin-bottom:10px">Automated Seeding</div>
-        <p style="font-size:13px;color:var(--muted);line-height:1.7">Use in-game rank data to auto-seed brackets, ensuring balanced match-ups from round one without manual intervention.</p>
-      </div>
-      <div style="background:var(--bg2);padding:32px;border:1px solid var(--border);flex:1">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:600;letter-spacing:2px;color:#fff;margin-bottom:10px">Cross-Title Profiles</div>
-        <p style="font-size:13px;color:var(--muted);line-height:1.7">One unified player profile connects stats across all 20+ supported games, with per-game performance breakdowns under a single Nexus account.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- PHASE -->
-<section id="phase">
-  <div class="phase-section fade-in">
-    <div class="phase-content">
-      <div>
-        <div class="phase-title">
-          <span class="phase-num">01</span>
-          CURRENTLY<br>LIVE
-        </div>
-        <div style="font-size:15px;color:var(--muted);line-height:1.7;margin-bottom:32px">
-          Phase 1 lays the foundation: a fully operational tournament system, player record-keeping infrastructure, club management, and live API pipelines for 20 top titles.
-        </div>
-        <div class="progress-bar">
-          <div class="progress-label">Phase 1 Completion <span>Phase 2 → Incoming</span></div>
-          <div class="progress-track">
-            <div class="progress-fill" style="width:72%"></div>
-          </div>
-        </div>
-      </div>
-      <div class="phase-list">
-        <div class="phase-item">
-          <div class="phase-item-num">01</div>
-          <div>
-            <div class="phase-item-title">Tournament Engine</div>
-            <div class="phase-item-text">Full bracket lifecycle — creation, seeding, scheduling, match tracking, result verification, and winner propagation.</div>
-          </div>
-        </div>
-        <div class="phase-item">
-          <div class="phase-item-num">02</div>
-          <div>
-            <div class="phase-item-title">Player Record System</div>
-            <div class="phase-item-text">Persistent performance history per game, per tournament, and per rating scope with trend analytics.</div>
-          </div>
-        </div>
-        <div class="phase-item">
-          <div class="phase-item-num">03</div>
-          <div>
-            <div class="phase-item-title">Club Infrastructure</div>
-            <div class="phase-item-text">Club creation, member management, club-level rankings, and inter-club tournament support.</div>
-          </div>
-        </div>
-        <div class="phase-item">
-          <div class="phase-item-num">04</div>
-          <div>
-            <div class="phase-item-title">20-Game API Layer</div>
-            <div class="phase-item-text">Official API integrations for 20 competitive titles providing verified results and live data feeds.</div>
-          </div>
-        </div>
-        <div class="phase-item">
-          <div class="phase-item-num">05</div>
-          <div>
-            <div class="phase-item-title">7-Scope Rating System</div>
-            <div class="phase-item-text">Simultaneous rating tracking from city-level to global with tamper-resistant ELO calculations.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- FOOTER -->
-<footer>
-  <div>
-    <div class="footer-logo">NEX<span>US</span></div>
-    <div class="footer-tagline">Tournament Management · Player Records · Club System · Game APIs</div>
-    <div style="margin-top:20px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted)">© 2025 NEXUS PLATFORM · PHASE 1 · ALL RIGHTS RESERVED</div>
-  </div>
-  <div class="footer-right">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:4px;color:var(--neon);margin-bottom:8px">PHASE 1 LIVE</div>
-    <div style="margin-bottom:6px">20 Games · 3 Tournament Types</div>
-    <div style="margin-bottom:6px">7 Rating Scopes · Full API Support</div>
-    <div style="color:var(--neon)"><span class="status-dot"></span>Platform Online</div>
-  </div>
-</footer>
-
-<script>
-  // Intersection observer for fade-in
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry, i) => {
-      if (entry.isIntersecting) {
-        setTimeout(() => entry.target.classList.add('visible'), i * 80);
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.1 });
-
-  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-
-  // Smooth nav active state
-  window.addEventListener('scroll', () => {
-    const nav = document.querySelector('nav');
-    if (window.scrollY > 50) {
-      nav.style.borderBottomColor = 'rgba(0,245,196,0.1)';
-    } else {
-      nav.style.borderBottomColor = 'rgba(0,245,196,0.06)';
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXUS — Login</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700&family=Share+Tech+Mono&family=Barlow:wght@300;400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060810;
+      --bg2: #0c1020;
+      --bg3: #121828;
+      --neon: #00f5c4;
+      --yellow: #f5c400;
+      --pink: #f500c4;
+      --blue: #0084ff;
+      --red: #ff3c5a;
+      --text: #c8d4e8;
+      --muted: #4a566e;
+      --border: rgba(0, 245, 196, 0.12);
     }
-  });
-</script>
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Barlow', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image: linear-gradient(rgba(0, 245, 196, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 245, 196, 0.02) 1px, transparent 1px);
+      background-size: 50px 50px;
+    }
+
+    /* LEFT PANEL */
+    .left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 80px 70px;
+      position: relative;
+      z-index: 1;
+      border-right: 1px solid var(--border);
+    }
+
+    .left-orb {
+      position: absolute;
+      bottom: -100px;
+      left: -100px;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(ellipse, rgba(0, 245, 196, 0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 52px;
+      letter-spacing: 6px;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .brand span {
+      color: var(--neon);
+    }
+
+    .brand-sub {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 3px;
+      margin-bottom: 60px;
+    }
+
+    .hero-stat {
+      margin-bottom: 20px;
+    }
+
+    .hs-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 56px;
+      line-height: 1;
+      color: #fff;
+    }
+
+    .hs-num span {
+      color: var(--neon);
+    }
+
+    .hs-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .divider-h {
+      width: 60px;
+      height: 1px;
+      background: var(--border);
+      margin: 32px 0;
+    }
+
+    .left-feature {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .lf-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--neon);
+      flex-shrink: 0;
+      box-shadow: 0 0 8px var(--neon);
+    }
+
+    .lf-text {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 15px;
+      letter-spacing: 1px;
+      color: var(--text);
+    }
+
+    /* RIGHT PANEL */
+    .right {
+      width: 480px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 50px;
+      position: relative;
+      z-index: 1;
+      background: var(--bg2);
+    }
+
+    .right-orb {
+      position: absolute;
+      top: -80px;
+      right: -80px;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(ellipse, rgba(0, 132, 255, 0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* TABS */
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 40px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 12px 24px;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.3s;
+      margin-bottom: -1px;
+    }
+
+    .tab.active {
+      color: var(--neon);
+      border-bottom-color: var(--neon);
+    }
+
+    /* FORM */
+    .form {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .form.active {
+      display: flex;
+    }
+
+    .form-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      color: #fff;
+      letter-spacing: 3px;
+      margin-bottom: 4px;
+    }
+
+    .form-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .field input,
+    .field select {
+      background: var(--bg3);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #fff;
+      padding: 12px 16px;
+      font-family: 'Barlow', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.3s;
+      width: 100%;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--neon);
+      box-shadow: 0 0 0 2px rgba(0, 245, 196, 0.08);
+    }
+
+    .field input::placeholder {
+      color: var(--muted);
+    }
+
+    .field select option {
+      background: var(--bg3);
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .field-hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .field-error {
+      font-size: 11px;
+      color: var(--red);
+      margin-top: 2px;
+      display: none;
+    }
+
+    .field.error input {
+      border-color: var(--red);
+    }
+
+    .field.error .field-error {
+      display: block;
+    }
+
+    .field.success input {
+      border-color: var(--neon);
+    }
+
+    /* PASSWORD STRENGTH */
+    .pw-strength {
+      margin-top: 6px;
+    }
+
+    .pw-bars {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .pw-bar {
+      flex: 1;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.06);
+      transition: background 0.3s;
+    }
+
+    .pw-bar.active-weak {
+      background: var(--red);
+    }
+
+    .pw-bar.active-mid {
+      background: var(--yellow);
+    }
+
+    .pw-bar.active-strong {
+      background: var(--neon);
+    }
+
+    .pw-label {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 1px;
+    }
+
+    /* OAUTH */
+    .oauth-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .oauth-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transition: all 0.3s;
+    }
+
+    .oauth-btn:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .oauth-icon {
+      font-size: 16px;
+    }
+
+    .or-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 11px;
+      font-family: 'Share Tech Mono', monospace;
+      letter-spacing: 2px;
+    }
+
+    .or-divider::before,
+    .or-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    /* BUTTON */
+    .btn-submit {
+      padding: 14px;
+      background: var(--neon);
+      color: var(--bg);
+      border: none;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s;
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-submit:hover {
+      box-shadow: 0 0 30px rgba(0, 245, 196, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-submit .spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--bg);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto;
+    }
+
+    .btn-submit.loading .btn-text {
+      display: none;
+    }
+
+    .btn-submit.loading .spinner {
+      display: block;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .form-footer {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .form-footer a {
+      color: var(--neon);
+      text-decoration: none;
+    }
+
+    .role-select {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    .role-opt {
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .role-opt input {
+      display: none;
+    }
+
+    .role-opt-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .role-opt-icon {
+      font-size: 18px;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .role-opt.selected {
+      border-color: var(--neon);
+      background: rgba(0, 245, 196, 0.06);
+    }
+
+    .role-opt.selected .role-opt-label {
+      color: var(--neon);
+    }
+
+    /* SUCCESS MESSAGE */
+    .success-msg {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 16px;
+      padding: 20px 0;
+    }
+
+    .success-msg.show {
+      display: flex;
+    }
+
+    .success-icon {
+      font-size: 48px;
+    }
+
+    .success-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      color: var(--neon);
+      letter-spacing: 4px;
+    }
+
+    .success-sub {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    /* BOTTOM NAV */
+    .back-home {
+      position: fixed;
+      top: 24px;
+      left: 24px;
+      z-index: 100;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 12px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: color 0.3s;
+    }
+
+    .back-home:hover {
+      color: var(--neon);
+    }
+
+    @media(max-width:900px) {
+      body {
+        flex-direction: column;
+      }
+
+      .left {
+        display: none;
+      }
+
+      .right {
+        width: 100%;
+        min-height: 100vh;
+        padding: 40px 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="grid-bg"></div>
+
+  <a class="back-home" href="/">← NEXUS HOME</a>
+
+  <!-- LEFT -->
+  <div class="left">
+    <div class="left-orb"></div>
+    <div class="brand">NEX<span>US</span></div>
+    <div class="brand-sub">TOURNAMENT MANAGEMENT PLATFORM</div>
+
+    <div class="hero-stat">
+      <div class="hs-num"><span>20</span>+</div>
+      <div class="hs-label">Competitive Games</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hs-num">3</div>
+      <div class="hs-label">Tournament Types</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hs-num"><span>7</span></div>
+      <div class="hs-label">Rating Scopes</div>
+    </div>
+
+    <div class="divider-h"></div>
+
+    <div class="left-feature">
+      <div class="lf-dot"></div>
+      <div class="lf-text">Public, Private & Club Tournaments</div>
+    </div>
+    <div class="left-feature">
+      <div class="lf-dot"></div>
+      <div class="lf-text">ELO Rating from City to Global</div>
+    </div>
+    <div class="left-feature">
+      <div class="lf-dot"></div>
+      <div class="lf-text">Verified results via Game APIs</div>
+    </div>
+    <div class="left-feature">
+      <div class="lf-dot"></div>
+      <div class="lf-text">Live bracket tracking & notifications</div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+    <div class="right-orb"></div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('login')">Login</div>
+      <div class="tab" onclick="switchTab('register')">Register</div>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div class="form active" id="form-login">
+      <div class="form-title">Welcome Back</div>
+      <div class="form-sub">Sign in to your NEXUS account</div>
+
+      <div class="oauth-row">
+        <button class="oauth-btn"><span class="oauth-icon">🎮</span> Discord</button>
+        <button class="oauth-btn"><span class="oauth-icon">🔍</span> Google</button>
+      </div>
+      <div class="or-divider">or continue with email</div>
+
+      <div class="field" id="f-login-email">
+        <label>Email Address</label>
+        <input type="email" placeholder="your@email.com" oninput="clearError('f-login-email')">
+        <div class="field-error">Please enter a valid email</div>
+      </div>
+
+      <div class="field" id="f-login-pw">
+        <label>Password</label>
+        <input type="password" placeholder="••••••••" oninput="clearError('f-login-pw')">
+        <div class="field-error">Password must be at least 8 characters</div>
+        <div class="field-hint" style="text-align:right"><a href="#"
+            style="color:var(--neon);font-size:11px;text-decoration:none;">Forgot password?</a></div>
+      </div>
+
+      <button class="btn-submit" onclick="handleLogin(this)">
+        <span class="btn-text">Sign In</span>
+        <div class="spinner"></div>
+      </button>
+
+      <div class="form-footer">Don't have an account? <a href="#" onclick="switchTab('register');return false;">Create
+          one →</a></div>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div class="form" id="form-register">
+      <div class="form-title">Join NEXUS</div>
+      <div class="form-sub">Create your competitive profile</div>
+
+      <div class="oauth-row">
+        <button class="oauth-btn"><span class="oauth-icon">🎮</span> Discord</button>
+        <button class="oauth-btn"><span class="oauth-icon">🔍</span> Google</button>
+      </div>
+      <div class="or-divider">or register with email</div>
+
+      <div class="field-row">
+        <div class="field" id="f-reg-username">
+          <label>Username</label>
+          <input type="text" placeholder="YourTag#1234" oninput="clearError('f-reg-username')">
+          <div class="field-error">Username taken or invalid</div>
+        </div>
+        <div class="field" id="f-reg-displayname">
+          <label>Display Name</label>
+          <input type="text" placeholder="John Doe" oninput="clearError('f-reg-displayname')">
+          <div class="field-error">Required</div>
+        </div>
+      </div>
+
+      <div class="field" id="f-reg-email">
+        <label>Email Address</label>
+        <input type="email" placeholder="your@email.com" oninput="clearError('f-reg-email')">
+        <div class="field-error">Invalid email address</div>
+      </div>
+
+      <div class="field" id="f-reg-pw">
+        <label>Password</label>
+        <input type="password" placeholder="••••••••" oninput="checkPwStrength(this)">
+        <div class="pw-strength">
+          <div class="pw-bars">
+            <div class="pw-bar" id="pb1"></div>
+            <div class="pw-bar" id="pb2"></div>
+            <div class="pw-bar" id="pb3"></div>
+            <div class="pw-bar" id="pb4"></div>
+          </div>
+          <div class="pw-label" id="pw-label">Enter a password</div>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Country</label>
+          <select>
+            <option value="">Select Country</option>
+            <option>India</option>
+            <option>USA</option>
+            <option>UK</option>
+            <option>Germany</option>
+            <option>Brazil</option>
+            <option>Japan</option>
+            <option>South Korea</option>
+            <option>Australia</option>
+            <option>Canada</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>City</label>
+          <input type="text" placeholder="Your city">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>I am joining as</label>
+        <div class="role-select">
+          <label class="role-opt selected" onclick="selectRole(this)">
+            <input type="radio" name="role" value="player" checked>
+            <span class="role-opt-icon">🎮</span>
+            <span class="role-opt-label">Player</span>
+          </label>
+          <label class="role-opt" onclick="selectRole(this)">
+            <input type="radio" name="role" value="club_manager">
+            <span class="role-opt-icon">🏢</span>
+            <span class="role-opt-label">Club Manager</span>
+          </label>
+        </div>
+      </div>
+
+      <button class="btn-submit" onclick="handleRegister(this)">
+        <span class="btn-text">Create Account</span>
+        <div class="spinner"></div>
+      </button>
+
+      <div class="form-footer">By registering you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy
+          Policy</a></div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="success-msg" id="success-msg">
+      <div class="success-icon">✅</div>
+      <div class="success-title">Account Created!</div>
+      <div class="success-sub">Check your email to verify your account. You'll be redirected to your dashboard shortly.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', (tab === 'login' && i === 0) || (tab === 'register' && i === 1)));
+      document.getElementById('form-login').classList.toggle('active', tab === 'login');
+      document.getElementById('form-register').classList.toggle('active', tab === 'register');
+    }
+
+    function clearError(fieldId) {
+      document.getElementById(fieldId)?.classList.remove('error');
+    }
+
+    function selectRole(el) {
+      document.querySelectorAll('.role-opt').forEach(r => r.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    function checkPwStrength(input) {
+      const val = input.value;
+      const bars = [document.getElementById('pb1'), document.getElementById('pb2'), document.getElementById('pb3'), document.getElementById('pb4')];
+      const label = document.getElementById('pw-label');
+      let strength = 0;
+      if (val.length >= 8) strength++;
+      if (/[A-Z]/.test(val)) strength++;
+      if (/[0-9]/.test(val)) strength++;
+      if (/[^A-Za-z0-9]/.test(val)) strength++;
+      bars.forEach((b, i) => {
+        b.className = 'pw-bar';
+        if (i < strength) {
+          b.classList.add(strength <= 1 ? 'active-weak' : strength <= 2 ? 'active-mid' : 'active-strong');
+        }
+      });
+      label.textContent = ['', 'Weak', 'Fair', 'Strong', 'Very Strong'][strength] || 'Enter a password';
+      label.style.color = ['var(--muted)', 'var(--red)', 'var(--yellow)', 'var(--neon)', 'var(--neon)'][strength];
+    }
+
+    function handleLogin(btn) {
+      btn.classList.add('loading');
+      btn.disabled = true;
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 1800);
+    }
+
+    function handleRegister(btn) {
+      btn.classList.add('loading');
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+        document.getElementById('form-register').style.display = 'none';
+        document.getElementById('success-msg').classList.add('show');
+        setTimeout(() => { window.location.href = '/dashboard'; }, 2000);
+      }, 2000);
+    }
+  </script>
 </body>
+
 </html>
